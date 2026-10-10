@@ -9,6 +9,8 @@ class ProblemResponse(BaseModel):
     url: str | None = None
     difficulty: str
     pattern_id: int
+    description: str | None = None
+    description: str | None = None
 
     class Config:
         from_attributes = True
