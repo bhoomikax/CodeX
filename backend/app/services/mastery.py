@@ -86,7 +86,4 @@ def update_mastery(
 
     mastery.updated_at = datetime.utcnow()
 
-    db.commit()
-    db.refresh(mastery)
-
     return mastery

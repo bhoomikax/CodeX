@@ -36,6 +36,7 @@ class UpdateMasteryTests(unittest.TestCase):
             pattern_id=self.pattern_id,
             is_correct=True,
         )
+        self.session.commit()
 
         self.assertEqual(after_correct.total_attempts, 1)
         self.assertEqual(after_correct.correct_attempts, 1)
@@ -57,6 +58,7 @@ class UpdateMasteryTests(unittest.TestCase):
             pattern_id=self.pattern_id,
             is_correct=False,
         )
+        self.session.commit()
 
         persisted = (
             self.session.query(PatternMastery)
