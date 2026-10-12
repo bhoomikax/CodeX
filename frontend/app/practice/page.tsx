@@ -5,28 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   apiRequest,
-  type Mastery,
-  type Mistake,
   type Pattern,
   type Problem,
-  type Recommendation,
   type Submission,
 } from "./api";
 
-const MISTAKE_CATEGORIES = [
-  "unknown",
-  "logic_error",
-  "syntax_error",
-  "edge_case",
-  "inefficient_solution",
-] as const;
-
 interface AttemptFeedback {
   submission: Submission;
-  mastery: Mastery | null;
-  mistake: Mistake | null;
-  recommendation: Recommendation | null;
-  supplementalErrors: string[];
 }
 
 export default function PracticePage() {
@@ -36,11 +21,6 @@ export default function PracticePage() {
   const [userId, setUserId] = useState("");
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState("");
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [mistakeCategory, setMistakeCategory] =
-    useState<(typeof MISTAKE_CATEGORIES)[number]>("unknown");
-  const [mistakeExplanation, setMistakeExplanation] = useState("");
-  const [mistakeCorrection, setMistakeCorrection] = useState("");
   const [feedback, setFeedback] = useState<AttemptFeedback | null>(null);
   const [loadingProblems, setLoadingProblems] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -119,57 +99,9 @@ export default function PracticePage() {
           problem_id: selectedProblem.id,
           code,
           language,
-          status: isCorrect ? "Accepted" : "Wrong Answer",
-          is_correct: isCorrect,
-          ...(isCorrect
-            ? {}
-            : {
-                mistake_category: mistakeCategory,
-                mistake_explanation: mistakeExplanation || undefined,
-                mistake_correction: mistakeCorrection || undefined,
-              }),
         }),
       });
-
-      const [masteries, mistakes, recommendation] = await Promise.allSettled([
-        apiRequest<Mastery[]>("/mastery/"),
-        isCorrect
-          ? Promise.resolve([] as Mistake[])
-          : apiRequest<Mistake[]>(`/mistakes/submission/${submission.id}`),
-        apiRequest<Recommendation>(`/recommendations/?user_id=${parsedUserId}`),
-      ]);
-      const supplementalErrors: string[] = [];
-
-      if (masteries.status === "rejected") {
-        supplementalErrors.push("Updated mastery score could not be loaded.");
-      }
-      if (mistakes.status === "rejected" && !isCorrect) {
-        supplementalErrors.push("Mistake feedback could not be loaded.");
-      }
-      if (recommendation.status === "rejected") {
-        supplementalErrors.push("A next problem recommendation is not available.");
-      }
-
-      setFeedback({
-        submission,
-        mastery:
-          masteries.status === "fulfilled"
-            ? masteries.value.find(
-                (item) =>
-                  item.user_id === parsedUserId &&
-                  item.pattern_id === selectedProblem.pattern_id,
-              ) ?? null
-            : null,
-        mistake:
-          mistakes.status === "fulfilled"
-            ? (mistakes.value[0] ?? null)
-            : null,
-        recommendation:
-          recommendation.status === "fulfilled"
-            ? recommendation.value
-            : null,
-        supplementalErrors,
-      });
+      setFeedback({ submission });
     } catch (error) {
       setSubmitError(
         error instanceof Error
@@ -182,8 +114,8 @@ export default function PracticePage() {
   }
 
   function openRecommendedProblem() {
-    if (!feedback?.recommendation) return;
-    setProblemId(String(feedback.recommendation.problem_id));
+    if (!feedback?.submission.recommendation) return;
+    setProblemId(String(feedback.submission.recommendation.problem_id));
     setFeedback(null);
     setCode("");
     setSubmitError("");
@@ -252,6 +184,11 @@ export default function PracticePage() {
                 {selectedProblem.description ||
                   "No problem description has been added yet. Use this practice to record an attempt and receive learning feedback."}
               </p>
+              {!selectedProblem.test_cases_available && (
+                <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                  Evaluation is unavailable for this problem until its test cases are configured.
+                </p>
+              )}
 
               <form onSubmit={submitAttempt} className="mt-8 space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -293,7 +230,7 @@ export default function PracticePage() {
                     onChange={(event) => setLanguage(event.target.value)}
                     className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 sm:max-w-xs"
                   >
-                    {["python", "javascript", "typescript", "java", "text"].map(
+                    {["python", "java"].map(
                       (item) => (
                         <option key={item} value={item}>
                           {item}
@@ -317,82 +254,13 @@ export default function PracticePage() {
 
                 <fieldset className="rounded-xl border border-slate-200 p-4">
                   <legend className="px-1 text-sm font-semibold text-slate-800">
-                    How did this attempt go?
+                    Evaluation
                   </legend>
                   <p className="mb-3 text-xs text-slate-500">
-                    PatternIQ records your self-assessment; it does not execute
-                    or automatically grade the code.
+                    The backend evaluates source code in an external sandbox.
                   </p>
-                  <div className="flex flex-wrap gap-3">
-                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                      <input
-                        type="radio"
-                        name="attempt-result"
-                        checked={isCorrect}
-                        onChange={() => setIsCorrect(true)}
-                      />
-                      Solved
-                    </label>
-                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                      <input
-                        type="radio"
-                        name="attempt-result"
-                        checked={!isCorrect}
-                        onChange={() => setIsCorrect(false)}
-                      />
-                      Needs work
-                    </label>
-                  </div>
                 </fieldset>
 
-                {!isCorrect && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="block text-sm font-medium text-slate-700">
-                      Mistake category
-                      <select
-                        value={mistakeCategory}
-                        onChange={(event) =>
-                          setMistakeCategory(
-                            event.target.value as (typeof MISTAKE_CATEGORIES)[number],
-                          )
-                        }
-                        className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5"
-                      >
-                        {MISTAKE_CATEGORIES.map((category) => (
-                          <option key={category} value={category}>
-                            {category.replaceAll("_", " ")}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <span className="self-end pb-2 text-xs text-slate-500">
-                      Choose a category yourself; no automatic code diagnosis
-                      is performed.
-                    </span>
-                    <label className="block text-sm font-medium text-slate-700 sm:col-span-2">
-                      What went wrong? (optional)
-                      <textarea
-                        value={mistakeExplanation}
-                        onChange={(event) =>
-                          setMistakeExplanation(event.target.value)
-                        }
-                        rows={2}
-                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5"
-                      />
-                    </label>
-                    <label className="block text-sm font-medium text-slate-700 sm:col-span-2">
-                      What will you try next time? (optional)
-                      <textarea
-                        value={mistakeCorrection}
-                        onChange={(event) =>
-                          setMistakeCorrection(event.target.value)
-                        }
-                        rows={2}
-                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5"
-                      />
-                    </label>
-                  </div>
-                )}
 
                 {submitError && (
                   <p role="alert" className="text-sm font-medium text-red-700">
@@ -402,10 +270,10 @@ export default function PracticePage() {
 
                 <button
                   type="submit"
-                  disabled={submitting || loadingProblems}
+                  disabled={submitting || loadingProblems || !selectedProblem.test_cases_available}
                   className="w-full rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
                 >
-                  {submitting ? "Saving attempt…" : "Submit attempt"}
+                  {submitting ? "Evaluating…" : "Evaluate solution"}
                 </button>
               </form>
             </section>
@@ -427,17 +295,41 @@ export default function PracticePage() {
                           : "bg-amber-50 text-amber-900"
                       }`}
                     >
-                      {feedback.submission.is_correct
-                        ? "Marked as solved"
-                        : "Marked as needs work"}
+                      {feedback.submission.status}
                     </p>
-                    {feedback.mastery ? (
+                    {feedback.submission.evaluation_details?.failed_test && (
+                      <p className="text-sm text-slate-600">
+                        Failed test {feedback.submission.evaluation_details.failed_test}
+                      </p>
+                    )}
+                    {feedback.submission.evaluation_details?.error && (
+                      <pre className="overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">
+                        {feedback.submission.evaluation_details.error}
+                      </pre>
+                    )}
+                    {feedback.submission.evaluation_details?.actual_output && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-slate-500">Your output</p>
+                        <pre className="mt-1 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">
+                          {feedback.submission.evaluation_details.actual_output}
+                        </pre>
+                      </div>
+                    )}
+                    {feedback.submission.evaluation_details?.feedback && (
+                      <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm">
+                        <p className="font-semibold">{feedback.submission.evaluation_details.feedback.explanation}</p>
+                        <p><span className="font-semibold">Hint:</span> {feedback.submission.evaluation_details.feedback.hint}</p>
+                        <p><span className="font-semibold">Suggested correction:</span> {feedback.submission.evaluation_details.feedback.correction}</p>
+                        <p className="text-xs text-slate-500">Feedback: {feedback.submission.evaluation_details.feedback.provider}</p>
+                      </div>
+                    )}
+                    {feedback.submission.mastery ? (
                       <div className="rounded-xl bg-indigo-50 p-4">
                         <p className="text-sm font-medium text-indigo-900">
                           Updated pattern mastery
                         </p>
                         <p className="mt-1 text-3xl font-bold text-indigo-950">
-                          {feedback.mastery.mastery_score.toFixed(1)}
+                          {feedback.submission.mastery.mastery_score.toFixed(1)}
                           <span className="ml-1 text-base font-medium">
                             / 100
                           </span>
@@ -449,46 +341,20 @@ export default function PracticePage() {
                       </p>
                     )}
 
-                    {feedback.mistake && (
-                      <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                        <p className="text-sm font-semibold capitalize text-amber-950">
-                          {feedback.mistake.category.replaceAll("_", " ")}
-                        </p>
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                            Explanation
-                          </p>
-                          <p className="mt-1 text-sm text-amber-950">
-                            {feedback.mistake.explanation ??
-                              "No explanation was provided."}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                            Correction
-                          </p>
-                          <p className="mt-1 text-sm text-amber-950">
-                            {feedback.mistake.correction ??
-                              "No correction was provided."}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {feedback.recommendation && (
+                    {feedback.submission.recommendation && (
                       <div className="rounded-xl border border-slate-200 p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                           Recommended next
                         </p>
                         <p className="mt-2 font-bold">
-                          {feedback.recommendation.title}
+                          {feedback.submission.recommendation.title}
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
-                          {feedback.recommendation.difficulty} ·{" "}
-                          {feedback.recommendation.pattern}
+                          {feedback.submission.recommendation.difficulty} ·{" "}
+                          {feedback.submission.recommendation.pattern}
                         </p>
                         <p className="mt-2 text-sm leading-5 text-slate-600">
-                          {feedback.recommendation.reason}
+                          {feedback.submission.recommendation.reason}
                         </p>
                         <button
                           type="button"
@@ -499,21 +365,11 @@ export default function PracticePage() {
                         </button>
                       </div>
                     )}
-                    {feedback.supplementalErrors.map((message) => (
-                      <p
-                        key={message}
-                        className="text-sm text-amber-800"
-                        role="status"
-                      >
-                        {message}
-                      </p>
-                    ))}
                   </div>
                 )}
               </section>
               <p className="px-1 text-xs leading-5 text-slate-500">
-                Your status is self-reported for this MVP. Submitted code is
-                stored with the attempt but is not run or graded automatically.
+                Code runs only through the configured external sandbox judge.
               </p>
             </aside>
           </div>

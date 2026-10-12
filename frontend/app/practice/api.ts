@@ -6,6 +6,7 @@ export interface Problem {
   difficulty: string;
   description: string | null;
   pattern_id: number;
+  test_cases_available: boolean;
 }
 
 export interface Pattern {
@@ -18,12 +19,25 @@ export interface Submission {
   user_id: number;
   problem_id: number;
   is_correct: boolean;
+  status: string;
+  evaluation_details: {
+    error?: string | null;
+    failed_test?: number | null;
+    actual_output?: string | null;
+    feedback?: { explanation: string; hint: string; correction: string; provider: string };
+  } | null;
+  mastery?: Mastery | null;
+  mistake?: Mistake | null;
+  recommendation?: Recommendation | null;
 }
 
 export interface Mastery {
   user_id: number;
   pattern_id: number;
   mastery_score: number;
+  confidence_score?: number;
+  total_attempts?: number;
+  correct_attempts?: number;
 }
 
 export interface Mistake {
@@ -49,6 +63,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const response = await fetch(`${API_PREFIX}${path}`, {
     ...init,
+    signal: init?.signal ?? AbortSignal.timeout(45_000),
     headers: {
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
