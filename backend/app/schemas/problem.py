@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 
 
+class SampleCase(BaseModel):
+    input: str
+    expected_output: str
+
+
 class ProblemResponse(BaseModel):
     id: int
     title: str
@@ -11,6 +16,8 @@ class ProblemResponse(BaseModel):
     pattern_id: int
     description: str | None = None
     test_cases_available: bool = False
+    # Only cases flagged visible are exposed; hidden expected outputs stay server-side.
+    sample_cases: list[SampleCase] = []
 
     class Config:
         from_attributes = True

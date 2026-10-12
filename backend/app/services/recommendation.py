@@ -18,10 +18,11 @@ def recommend_problem(
     db: Session,
     user_id: int,
 ) -> RecommendationResponse | None:
+    # Only recommend problems the judge can actually evaluate.
     problems = [
         problem
         for problem in db.query(Problem).order_by(Problem.id).all()
-        if problem.test_cases
+        if problem.test_cases_available
     ]
     if not problems:
         return None

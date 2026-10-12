@@ -121,6 +121,127 @@ class JudgeTests(unittest.TestCase):
         with self.assertRaises(EvaluationError):
             evaluate_submission(self.problem, "x", "python")
 
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator._judge")
+    def test_output_comparison_ignores_trailing_whitespace_and_crlf(self, judge):
+        for stdout in ("4", "4 \r\n", "4\n\n", "4\t\n"):
+            judge.return_value = {"status": {"id": 3}, "stdout": stdout}
+            self.assertTrue(evaluate_submission(self.problem, "code", "python").is_correct, repr(stdout))
+        judge.return_value = {"status": {"id": 3}, "stdout": " 4\n"}
+        self.assertEqual(evaluate_submission(self.problem, "code", "python").status, "Wrong Answer")
+        judge.return_value = {"status": {"id": 3}, "stdout": None}
+        self.assertEqual(evaluate_submission(self.problem, "code", "python").status, "Wrong Answer")
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator._judge")
+    def test_all_runtime_error_statuses_map_to_runtime_error(self, judge):
+        for status_id in (7, 8, 9, 10, 11, 12, 14):
+            judge.return_value = {"status": {"id": status_id}, "stderr": None, "message": "signal"}
+            result = evaluate_submission(self.problem, "code", "python")
+            self.assertEqual(result.status, "Runtime Error")
+            self.assertEqual(result.error, "signal")
+            self.assertEqual(result.failed_test, 1)
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator._judge")
+    def test_internal_and_unknown_judge_statuses_are_errors(self, judge):
+        for payload in ({"status": {"id": 13}}, {"status": {"id": 99}}, {"status": "weird"}, {}):
+            judge.return_value = payload
+            with self.assertRaises(EvaluationError):
+                evaluate_submission(self.problem, "code", "python")
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator._judge")
+    def test_second_case_failure_reports_its_index(self, judge):
+        problem = type("Problem", (), {"test_cases": [
+            {"input": "1\n", "expected_output": "1\n"},
+            {"input": "2\n", "expected_output": "2\n"},
+        ]})()
+        judge.side_effect = [{"status": {"id": 3}, "stdout": "1\n"}, {"status": {"id": 3}, "stdout": "0\n"}]
+        result = evaluate_submission(problem, "code", "python")
+        self.assertEqual((result.status, result.failed_test, result.actual_output), ("Wrong Answer", 2, "0"))
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator._judge")
+    def test_invalid_test_cases_are_unavailable_not_verdicts(self, judge):
+        for cases in ("not a list", [["input", "output"]], [{"input": 5, "expected_output": "5"}],
+                      [{"input": "5\n"}], [{"input": "x", "expected_output": None}],
+                      [{"input": "a" * 10_001, "expected_output": ""}],
+                      [{"input": "", "expected_output": ""}] * 51):
+            with self.subTest(cases=str(cases)[:40]):
+                with self.assertRaises(EvaluationUnavailable):
+                    evaluate_submission(type("Problem", (), {"test_cases": cases})(), "code", "python")
+        judge.assert_not_called()
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    def test_oversized_source_is_rejected_before_contacting_judge(self):
+        with patch("app.services.evaluator._judge") as judge:
+            with self.assertRaises(ValueError):
+                evaluate_submission(self.problem, "x" * 50_001, "python")
+            judge.assert_not_called()
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator.time.sleep")
+    @patch("app.services.evaluator.urlopen")
+    def test_pending_status_in_create_response_is_polled(self, open_url, _sleep):
+        queued = MagicMock()
+        queued.__enter__.return_value = queued
+        queued.read.return_value = b'{"token":"t1","status":{"id":1,"description":"In Queue"}}'
+        processing = MagicMock()
+        processing.__enter__.return_value = processing
+        processing.read.return_value = b'{"token":"t1","status":{"id":2,"description":"Processing"}}'
+        done = MagicMock()
+        done.__enter__.return_value = done
+        done.read.return_value = b'{"token":"t1","status":{"id":3},"stdout":"4\\n"}'
+        open_url.side_effect = [queued, processing, done]
+
+        from app.services.evaluator import _judge
+        self.assertEqual(_judge("code", "python", "4\n", "https://judge.invalid")["status"]["id"], 3)
+        self.assertEqual(open_url.call_count, 3)
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid", "JUDGE0_API_KEY": "sekret-token"})
+    @patch("app.services.evaluator.urlopen")
+    def test_http_errors_become_evaluation_errors_without_leaking_secrets(self, open_url):
+        from urllib.error import HTTPError
+        from app.services.evaluator import _judge
+        for code, fragment in ((401, "credentials"), (403, "credentials"), (429, "rate limit"), (500, "HTTP 500")):
+            open_url.side_effect = HTTPError("https://judge.invalid", code, "nope", {}, None)
+            with self.assertRaises(EvaluationError) as error:
+                _judge("code", "python", "", "https://judge.invalid")
+            self.assertIn(fragment, str(error.exception))
+            self.assertNotIn("sekret-token", str(error.exception))
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
+    @patch("app.services.evaluator.urlopen")
+    def test_non_object_create_response_is_malformed(self, open_url):
+        from app.services.evaluator import _judge
+        for body in (b"[]", b"null", b"not json"):
+            malformed = MagicMock()
+            malformed.__enter__.return_value = malformed
+            malformed.read.return_value = body
+            open_url.return_value = malformed
+            with self.assertRaises(EvaluationError):
+                _judge("code", "python", "", "https://judge.invalid")
+
+    def test_auth_headers_follow_the_judge_host(self):
+        from app.services.evaluator import _auth_headers
+        with patch.dict(os.environ, {"JUDGE0_API_KEY": ""}):
+            self.assertNotIn("X-Auth-Token", _auth_headers("https://judge.invalid"))
+        with patch.dict(os.environ, {"JUDGE0_API_KEY": "secret", "JUDGE0_AUTH_HEADER": ""}):
+            self.assertEqual(_auth_headers("https://ce.judge0.com")["X-Auth-Token"], "secret")
+            rapid = _auth_headers("https://judge0-ce.p.rapidapi.com")
+            self.assertEqual(rapid["X-RapidAPI-Key"], "secret")
+            self.assertEqual(rapid["X-RapidAPI-Host"], "judge0-ce.p.rapidapi.com")
+            self.assertNotIn("X-Auth-Token", rapid)
+        with patch.dict(os.environ, {"JUDGE0_API_KEY": "secret", "JUDGE0_AUTH_HEADER": "X-Custom"}):
+            self.assertEqual(_auth_headers("https://judge.invalid")["X-Custom"], "secret")
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid/  "})
+    @patch("app.services.evaluator._judge", return_value={"status": {"id": 3}, "stdout": "4"})
+    def test_judge_url_is_trimmed(self, judge):
+        evaluate_submission(self.problem, "code", "python")
+        self.assertEqual(judge.call_args.args[3], "https://judge.invalid")
+
 
 class FeedbackTests(unittest.TestCase):
     def test_rule_based_fallback_is_labeled(self):

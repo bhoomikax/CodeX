@@ -1,10 +1,15 @@
-from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.sql import func
 from app.database import Base
 
 
 class PatternMastery(Base):
     __tablename__ = "pattern_mastery"
+    # One mastery row per learner and pattern. Applied to newly created
+    # databases; existing tables are not altered by create_all.
+    __table_args__ = (
+        UniqueConstraint("user_id", "pattern_id", name="uq_pattern_mastery_user_pattern"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

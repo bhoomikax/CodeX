@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import SQLAlchemyError
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -13,6 +12,13 @@ from app.services.recommendation import recommend_problem
 
 router = APIRouter(prefix="/submissions", tags=["Submissions"])
 
+MISTAKE_CATEGORIES = {
+    "Compilation Error": "syntax_error",
+    "Wrong Answer": "edge_case",
+    "Runtime Error": "logic_error",
+    "Time Limit Exceeded": "inefficient_solution",
+}
+
 
 @router.post("/", response_model=SubmissionResponse)
 def create_submission(submission: SubmissionCreate, db: Session = Depends(get_db)):
@@ -23,6 +29,8 @@ def create_submission(submission: SubmissionCreate, db: Session = Depends(get_db
     if problem is None:
         raise HTTPException(status_code=404, detail="Problem not found")
 
+    # The verdict comes only from the server-side judge. Nothing is persisted
+    # until the judge returns a trustworthy result.
     try:
         evaluation = evaluate_submission(problem, submission.code, submission.language)
     except ValueError as exc:
@@ -32,13 +40,18 @@ def create_submission(submission: SubmissionCreate, db: Session = Depends(get_db
     except EvaluationError as exc:
         raise HTTPException(status_code=502, detail=f"Evaluation Error: {exc}") from exc
 
+    # Advisory only: provider failures fall back to rule-based text inside
+    # generate_feedback and can never change the verdict.
+    feedback = generate_feedback(problem, submission.code, submission.language, evaluation)
+
+    # Submission, mastery and mistake rows are written in one transaction so a
+    # failure cannot leave a submission without its learning records.
     try:
-        feedback = generate_feedback(problem, submission.code, submission.language, evaluation)
         new_submission = Submission(
             user_id=submission.user_id,
             problem_id=submission.problem_id,
             code=submission.code,
-            language=submission.language.lower(),
+            language=submission.language.strip().lower(),
             status=evaluation.status,
             is_correct=evaluation.is_correct,
             evaluation_details={**evaluation.as_dict(), "feedback": feedback},
@@ -54,23 +67,17 @@ def create_submission(submission: SubmissionCreate, db: Session = Depends(get_db
         )
         mistake = None
         if not evaluation.is_correct:
-            category = {
-                "Compilation Error": "syntax_error",
-                "Wrong Answer": "edge_case",
-                "Runtime Error": "logic_error",
-                "Time Limit Exceeded": "inefficient_solution",
-            }.get(evaluation.status, "unknown")
             mistake = create_mistake(
                 db=db,
                 submission_id=new_submission.id,
-                category=category,
+                category=MISTAKE_CATEGORIES.get(evaluation.status, "unknown"),
                 explanation=feedback["explanation"],
                 correction=feedback["correction"],
             )
         recommendation = recommend_problem(db=db, user_id=submission.user_id)
         db.commit()
         db.refresh(new_submission)
-    except SQLAlchemyError as exc:
+    except Exception as exc:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to save submission and learning records") from exc
 
@@ -100,8 +107,14 @@ def create_submission(submission: SubmissionCreate, db: Session = Depends(get_db
 
 
 @router.get("/", response_model=list[SubmissionResponse])
-def get_submissions(db: Session = Depends(get_db)):
-    return db.query(Submission).all()
+def get_submissions(
+    user_id: int | None = Query(default=None, gt=0, description="Only return this learner's submissions"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Submission)
+    if user_id is not None:
+        query = query.filter(Submission.user_id == user_id)
+    return query.order_by(Submission.id).all()
 
 
 @router.get("/{submission_id}", response_model=SubmissionResponse)
