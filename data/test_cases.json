@@ -1,0 +1,732 @@
+{
+  "704": {
+    "description": "Console I/O demonstration: read n, then n sorted integers, then target. Print the zero-based index of target, or -1 if it is absent.",
+    "test_cases": [
+      {
+        "input": "6\n-1 0 3 5 9 12\n9\n",
+        "expected_output": "4\n",
+        "visible": true
+      },
+      {
+        "input": "6\n-1 0 3 5 9 12\n2\n",
+        "expected_output": "-1\n",
+        "visible": true
+      },
+      {
+        "input": "1\n5\n5\n",
+        "expected_output": "0\n",
+        "visible": false
+      }
+    ]
+  },
+  "167": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers sorted in non-decreasing order. Line 3: target. Print the 1-based indices i j (i < j) of the two numbers that add up to target, separated by a space. Exactly one solution exists.",
+    "test_cases": [
+      {
+        "input": "4\n2 7 11 15\n9\n",
+        "expected_output": "1 2\n",
+        "visible": true
+      },
+      {
+        "input": "3\n2 3 4\n6\n",
+        "expected_output": "1 3\n",
+        "visible": true
+      },
+      {
+        "input": "2\n-1 0\n-1\n",
+        "expected_output": "1 2\n",
+        "visible": false
+      }
+    ]
+  },
+  "125": {
+    "description": "Console I/O. Line 1: the string s (it may contain spaces and punctuation). Print true if s is a palindrome after keeping only alphanumeric characters and ignoring case, otherwise false.",
+    "test_cases": [
+      {
+        "input": "A man, a plan, a canal: Panama\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "race a car\n",
+        "expected_output": "false\n",
+        "visible": true
+      },
+      {
+        "input": " \n",
+        "expected_output": "true\n",
+        "visible": false
+      }
+    ]
+  },
+  "26": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers sorted in non-decreasing order. Print k, the number of unique elements, on the first line and the k unique elements in order on the second line.",
+    "test_cases": [
+      {
+        "input": "3\n1 1 2\n",
+        "expected_output": "2\n1 2\n",
+        "visible": true
+      },
+      {
+        "input": "10\n0 0 1 1 1 2 2 3 3 4\n",
+        "expected_output": "5\n0 1 2 3 4\n",
+        "visible": true
+      },
+      {
+        "input": "1\n7\n",
+        "expected_output": "1\n7\n",
+        "visible": false
+      }
+    ]
+  },
+  "643": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers. Line 3: k. Print the maximum average of any contiguous subarray of length k, with exactly 5 decimal places.",
+    "test_cases": [
+      {
+        "input": "6\n1 12 -5 -6 50 3\n4\n",
+        "expected_output": "12.75000\n",
+        "visible": true
+      },
+      {
+        "input": "1\n5\n1\n",
+        "expected_output": "5.00000\n",
+        "visible": true
+      },
+      {
+        "input": "4\n0 1 1 3\n3\n",
+        "expected_output": "1.66667\n",
+        "visible": false
+      }
+    ]
+  },
+  "3": {
+    "description": "Console I/O. Line 1: the string s (letters, digits, symbols; no spaces). Print the length of the longest substring without repeating characters.",
+    "test_cases": [
+      {
+        "input": "abcabcbb\n",
+        "expected_output": "3\n",
+        "visible": true
+      },
+      {
+        "input": "bbbbb\n",
+        "expected_output": "1\n",
+        "visible": true
+      },
+      {
+        "input": "pwwkew\n",
+        "expected_output": "3\n",
+        "visible": true
+      },
+      {
+        "input": "dvdf\n",
+        "expected_output": "3\n",
+        "visible": false
+      }
+    ]
+  },
+  "217": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers. Print true if any value appears at least twice, otherwise false.",
+    "test_cases": [
+      {
+        "input": "4\n1 2 3 1\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "4\n1 2 3 4\n",
+        "expected_output": "false\n",
+        "visible": true
+      },
+      {
+        "input": "10\n1 1 1 3 3 4 3 2 4 2\n",
+        "expected_output": "true\n",
+        "visible": false
+      }
+    ]
+  },
+  "242": {
+    "description": "Console I/O. Line 1: string s. Line 2: string t. Print true if t is an anagram of s, otherwise false.",
+    "test_cases": [
+      {
+        "input": "anagram\nnagaram\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "rat\ncar\n",
+        "expected_output": "false\n",
+        "visible": true
+      },
+      {
+        "input": "a\nab\n",
+        "expected_output": "false\n",
+        "visible": false
+      }
+    ]
+  },
+  "20": {
+    "description": "Console I/O. Line 1: a string containing only the characters ()[]{}. Print true if the brackets are valid (every opening bracket is closed by the same type in the correct order), otherwise false.",
+    "test_cases": [
+      {
+        "input": "()\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "()[]{}\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "(]\n",
+        "expected_output": "false\n",
+        "visible": true
+      },
+      {
+        "input": "([])\n",
+        "expected_output": "true\n",
+        "visible": false
+      },
+      {
+        "input": "([)]\n",
+        "expected_output": "false\n",
+        "visible": false
+      }
+    ]
+  },
+  "121": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (prices by day). Print the maximum profit from buying on one day and selling on a later day, or 0 if no profit is possible.",
+    "test_cases": [
+      {
+        "input": "6\n7 1 5 3 6 4\n",
+        "expected_output": "5\n",
+        "visible": true
+      },
+      {
+        "input": "5\n7 6 4 3 1\n",
+        "expected_output": "0\n",
+        "visible": true
+      },
+      {
+        "input": "2\n1 2\n",
+        "expected_output": "1\n",
+        "visible": false
+      }
+    ]
+  },
+  "70": {
+    "description": "Console I/O. Line 1: n (1 <= n <= 45). Print the number of distinct ways to climb n stairs taking 1 or 2 steps at a time.",
+    "test_cases": [
+      {
+        "input": "2\n",
+        "expected_output": "2\n",
+        "visible": true
+      },
+      {
+        "input": "3\n",
+        "expected_output": "3\n",
+        "visible": true
+      },
+      {
+        "input": "1\n",
+        "expected_output": "1\n",
+        "visible": false
+      },
+      {
+        "input": "45\n",
+        "expected_output": "1836311903\n",
+        "visible": false
+      }
+    ]
+  },
+  "198": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (money in each house). Print the maximum amount that can be robbed without robbing two adjacent houses.",
+    "test_cases": [
+      {
+        "input": "4\n1 2 3 1\n",
+        "expected_output": "4\n",
+        "visible": true
+      },
+      {
+        "input": "5\n2 7 9 3 1\n",
+        "expected_output": "12\n",
+        "visible": true
+      },
+      {
+        "input": "1\n5\n",
+        "expected_output": "5\n",
+        "visible": false
+      }
+    ]
+  },
+  "322": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (coin denominations). Line 3: amount. Print the fewest coins needed to make the amount, or -1 if it cannot be made.",
+    "test_cases": [
+      {
+        "input": "3\n1 2 5\n11\n",
+        "expected_output": "3\n",
+        "visible": true
+      },
+      {
+        "input": "1\n2\n3\n",
+        "expected_output": "-1\n",
+        "visible": true
+      },
+      {
+        "input": "1\n1\n0\n",
+        "expected_output": "0\n",
+        "visible": false
+      }
+    ]
+  },
+  "1046": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (stone weights). Repeatedly smash the two heaviest stones (equal: both destroyed; otherwise the difference remains). Print the weight of the last remaining stone, or 0 if none remain.",
+    "test_cases": [
+      {
+        "input": "6\n2 7 4 1 8 1\n",
+        "expected_output": "1\n",
+        "visible": true
+      },
+      {
+        "input": "1\n1\n",
+        "expected_output": "1\n",
+        "visible": true
+      },
+      {
+        "input": "2\n3 3\n",
+        "expected_output": "0\n",
+        "visible": false
+      }
+    ]
+  },
+  "55": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (maximum jump length at each index). Print true if the last index can be reached starting from index 0, otherwise false.",
+    "test_cases": [
+      {
+        "input": "5\n2 3 1 1 4\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "5\n3 2 1 0 4\n",
+        "expected_output": "false\n",
+        "visible": true
+      },
+      {
+        "input": "1\n0\n",
+        "expected_output": "true\n",
+        "visible": false
+      }
+    ]
+  },
+  "209": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (positive). Line 3: target. Print the minimal length of a contiguous subarray whose sum is at least target, or 0 if none exists.",
+    "test_cases": [
+      {
+        "input": "6\n2 3 1 2 4 3\n7\n",
+        "expected_output": "2\n",
+        "visible": true
+      },
+      {
+        "input": "3\n1 4 4\n4\n",
+        "expected_output": "1\n",
+        "visible": true
+      },
+      {
+        "input": "8\n1 1 1 1 1 1 1 1\n11\n",
+        "expected_output": "0\n",
+        "visible": false
+      }
+    ]
+  },
+  "739": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (daily temperatures). Print n space-separated integers: for each day, the number of days until a warmer temperature, or 0 if there is none.",
+    "test_cases": [
+      {
+        "input": "8\n73 74 75 71 69 72 76 73\n",
+        "expected_output": "1 1 4 2 1 1 0 0\n",
+        "visible": true
+      },
+      {
+        "input": "4\n30 40 50 60\n",
+        "expected_output": "1 1 1 0\n",
+        "visible": true
+      },
+      {
+        "input": "3\n30 60 90\n",
+        "expected_output": "1 1 0\n",
+        "visible": false
+      }
+    ]
+  },
+  "238": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers. Print n space-separated integers where the i-th value is the product of all elements except the i-th. Do not use division.",
+    "test_cases": [
+      {
+        "input": "4\n1 2 3 4\n",
+        "expected_output": "24 12 8 6\n",
+        "visible": true
+      },
+      {
+        "input": "5\n-1 1 0 -3 3\n",
+        "expected_output": "0 0 9 0 0\n",
+        "visible": true
+      }
+    ]
+  },
+  "35": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers sorted with distinct values. Line 3: target. Print the index of target if present, otherwise the index where it would be inserted to keep the order.",
+    "test_cases": [
+      {
+        "input": "4\n1 3 5 6\n5\n",
+        "expected_output": "2\n",
+        "visible": true
+      },
+      {
+        "input": "4\n1 3 5 6\n2\n",
+        "expected_output": "1\n",
+        "visible": true
+      },
+      {
+        "input": "4\n1 3 5 6\n7\n",
+        "expected_output": "4\n",
+        "visible": false
+      }
+    ]
+  },
+  "350": {
+    "description": "Console I/O. Line 1: n. Line 2: n integers (nums1). Line 3: m. Line 4: m integers (nums2). Print the intersection with each element appearing as many times as it occurs in both arrays, in ascending order, space-separated.",
+    "test_cases": [
+      {
+        "input": "4\n1 2 2 1\n2\n2 2\n",
+        "expected_output": "2 2\n",
+        "visible": true
+      },
+      {
+        "input": "3\n4 9 5\n5\n9 4 9 8 4\n",
+        "expected_output": "4 9\n",
+        "visible": true
+      },
+      {
+        "input": "1\n1\n1\n2\n",
+        "expected_output": "\n",
+        "visible": false
+      }
+    ]
+  },
+  "876": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (linked list values in order). Print the values from the middle node to the end, space-separated. With two middle nodes, start from the second.",
+    "test_cases": [
+      {
+        "input": "5\n1 2 3 4 5\n",
+        "expected_output": "3 4 5\n",
+        "visible": true
+      },
+      {
+        "input": "6\n1 2 3 4 5 6\n",
+        "expected_output": "4 5 6\n",
+        "visible": true
+      },
+      {
+        "input": "1\n9\n",
+        "expected_output": "9\n",
+        "visible": false
+      }
+    ]
+  },
+  "206": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (linked list values in order; n may be 0). Print the values of the reversed list, space-separated.",
+    "test_cases": [
+      {
+        "input": "5\n1 2 3 4 5\n",
+        "expected_output": "5 4 3 2 1\n",
+        "visible": true
+      },
+      {
+        "input": "2\n1 2\n",
+        "expected_output": "2 1\n",
+        "visible": true
+      },
+      {
+        "input": "0\n\n",
+        "expected_output": "\n",
+        "visible": false
+      }
+    ]
+  },
+  "875": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (banana piles). Line 3: h (hours). Print the minimum integer eating speed k such that all piles can be finished within h hours.",
+    "test_cases": [
+      {
+        "input": "4\n3 6 7 11\n8\n",
+        "expected_output": "4\n",
+        "visible": true
+      },
+      {
+        "input": "5\n30 11 23 4 20\n5\n",
+        "expected_output": "30\n",
+        "visible": true
+      },
+      {
+        "input": "5\n30 11 23 4 20\n6\n",
+        "expected_output": "23\n",
+        "visible": false
+      }
+    ]
+  },
+  "33": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (a sorted array of distinct values rotated at an unknown pivot). Line 3: target. Print the index of target, or -1 if it is absent.",
+    "test_cases": [
+      {
+        "input": "7\n4 5 6 7 0 1 2\n0\n",
+        "expected_output": "4\n",
+        "visible": true
+      },
+      {
+        "input": "7\n4 5 6 7 0 1 2\n3\n",
+        "expected_output": "-1\n",
+        "visible": true
+      },
+      {
+        "input": "1\n1\n0\n",
+        "expected_output": "-1\n",
+        "visible": false
+      }
+    ]
+  },
+  "34": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers sorted in non-decreasing order (n may be 0). Line 3: target. Print the first and last index of target separated by a space, or -1 -1 if it is absent.",
+    "test_cases": [
+      {
+        "input": "6\n5 7 7 8 8 10\n8\n",
+        "expected_output": "3 4\n",
+        "visible": true
+      },
+      {
+        "input": "6\n5 7 7 8 8 10\n6\n",
+        "expected_output": "-1 -1\n",
+        "visible": true
+      },
+      {
+        "input": "0\n\n0\n",
+        "expected_output": "-1 -1\n",
+        "visible": false
+      }
+    ]
+  },
+  "560": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers. Line 3: k. Print the number of contiguous subarrays whose sum equals k.",
+    "test_cases": [
+      {
+        "input": "3\n1 1 1\n2\n",
+        "expected_output": "2\n",
+        "visible": true
+      },
+      {
+        "input": "3\n1 2 3\n3\n",
+        "expected_output": "2\n",
+        "visible": true
+      },
+      {
+        "input": "4\n1 -1 0 1\n0\n",
+        "expected_output": "4\n",
+        "visible": false
+      }
+    ]
+  },
+  "11": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (line heights). Print the maximum amount of water a container formed by two lines can hold.",
+    "test_cases": [
+      {
+        "input": "9\n1 8 6 2 5 4 8 3 7\n",
+        "expected_output": "49\n",
+        "visible": true
+      },
+      {
+        "input": "2\n1 1\n",
+        "expected_output": "1\n",
+        "visible": true
+      }
+    ]
+  },
+  "150": {
+    "description": "Console I/O. Line 1: the tokens of a Reverse Polish Notation expression separated by spaces (integers and the operators + - * /; division truncates toward zero). Print the evaluated integer.",
+    "test_cases": [
+      {
+        "input": "2 1 + 3 *\n",
+        "expected_output": "9\n",
+        "visible": true
+      },
+      {
+        "input": "4 13 5 / +\n",
+        "expected_output": "6\n",
+        "visible": true
+      },
+      {
+        "input": "10 6 9 3 + -11 * / * 17 + 5 +\n",
+        "expected_output": "22\n",
+        "visible": false
+      }
+    ]
+  },
+  "128": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (unsorted). Print the length of the longest run of consecutive integer values.",
+    "test_cases": [
+      {
+        "input": "6\n100 4 200 1 3 2\n",
+        "expected_output": "4\n",
+        "visible": true
+      },
+      {
+        "input": "10\n0 3 7 2 5 8 4 6 0 1\n",
+        "expected_output": "9\n",
+        "visible": true
+      },
+      {
+        "input": "4\n1 0 1 2\n",
+        "expected_output": "3\n",
+        "visible": false
+      }
+    ]
+  },
+  "21": {
+    "description": "Console I/O. Line 1: n. Line 2: n sorted integers (list1). Line 3: m. Line 4: m sorted integers (list2). n or m may be 0 with an empty line. Print the merged sorted list, space-separated.",
+    "test_cases": [
+      {
+        "input": "3\n1 2 4\n3\n1 3 4\n",
+        "expected_output": "1 1 2 3 4 4\n",
+        "visible": true
+      },
+      {
+        "input": "0\n\n0\n\n",
+        "expected_output": "\n",
+        "visible": true
+      },
+      {
+        "input": "0\n\n1\n0\n",
+        "expected_output": "0\n",
+        "visible": false
+      }
+    ]
+  },
+  "141": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (linked list values). Line 3: pos, the zero-based index the tail links back to, or -1 for no cycle. Print true if the list has a cycle, otherwise false.",
+    "test_cases": [
+      {
+        "input": "4\n3 2 0 -4\n1\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "2\n1 2\n0\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "1\n1\n-1\n",
+        "expected_output": "false\n",
+        "visible": false
+      }
+    ]
+  },
+  "19": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (linked list values). Line 3: k. Remove the k-th node from the end and print the remaining values, space-separated (an empty line if none remain).",
+    "test_cases": [
+      {
+        "input": "5\n1 2 3 4 5\n2\n",
+        "expected_output": "1 2 3 5\n",
+        "visible": true
+      },
+      {
+        "input": "1\n1\n1\n",
+        "expected_output": "\n",
+        "visible": true
+      },
+      {
+        "input": "2\n1 2\n1\n",
+        "expected_output": "1\n",
+        "visible": false
+      }
+    ]
+  },
+  "567": {
+    "description": "Console I/O. Line 1: s1. Line 2: s2. Print true if s2 contains a permutation of s1 as a substring, otherwise false.",
+    "test_cases": [
+      {
+        "input": "ab\neidbaooo\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "ab\neidboaoo\n",
+        "expected_output": "false\n",
+        "visible": true
+      }
+    ]
+  },
+  "76": {
+    "description": "Console I/O. Line 1: s. Line 2: t. Print the minimum window substring of s that contains every character of t (with multiplicity), or an empty line if no such window exists. The answer is unique.",
+    "test_cases": [
+      {
+        "input": "ADOBECODEBANC\nABC\n",
+        "expected_output": "BANC\n",
+        "visible": true
+      },
+      {
+        "input": "a\na\n",
+        "expected_output": "a\n",
+        "visible": true
+      },
+      {
+        "input": "a\naa\n",
+        "expected_output": "\n",
+        "visible": false
+      }
+    ]
+  },
+  "416": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers (positive). Print true if the array can be partitioned into two subsets with equal sums, otherwise false.",
+    "test_cases": [
+      {
+        "input": "4\n1 5 11 5\n",
+        "expected_output": "true\n",
+        "visible": true
+      },
+      {
+        "input": "4\n1 2 3 5\n",
+        "expected_output": "false\n",
+        "visible": true
+      }
+    ]
+  },
+  "215": {
+    "description": "Console I/O. Line 1: n. Line 2: n space-separated integers. Line 3: k. Print the k-th largest element.",
+    "test_cases": [
+      {
+        "input": "6\n3 2 1 5 6 4\n2\n",
+        "expected_output": "5\n",
+        "visible": true
+      },
+      {
+        "input": "9\n3 2 3 1 2 4 5 5 6\n4\n",
+        "expected_output": "4\n",
+        "visible": true
+      }
+    ]
+  },
+  "200": {
+    "description": "Console I/O. Line 1: rows cols. Then rows lines, each a string of cols characters that are 0 (water) or 1 (land). Print the number of islands (groups of land connected horizontally or vertically).",
+    "test_cases": [
+      {
+        "input": "4 5\n11110\n11010\n11000\n00000\n",
+        "expected_output": "1\n",
+        "visible": true
+      },
+      {
+        "input": "4 5\n11000\n11000\n00100\n00011\n",
+        "expected_output": "3\n",
+        "visible": true
+      }
+    ]
+  }
+}
