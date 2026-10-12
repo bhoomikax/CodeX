@@ -104,6 +104,22 @@ feedback), the updated `mastery`, a `mistake` for incorrect results, and a
 `recommendation`. Any `status` / `is_correct` fields sent by the client are
 ignored.
 
+## Learner progress
+
+`GET /progress/?user_id=<learner-id>` returns persisted attempt totals,
+correct attempts, and accuracy percentage, plus per-pattern mastery and
+accuracy, the strongest and weakest attempted patterns, and the 10 most recent
+submissions. Accuracy is a percentage from 0 to 100 rounded to two decimal
+places. Pattern scores come from the learner's saved mastery records; attempt
+counts and correctness are aggregated from submissions. A learner with no
+attempts receives zero totals and accuracy, empty pattern and recent-submission
+lists, and `null` strongest and weakest patterns. A nonpositive ID returns
+HTTP 422 and an unknown learner returns HTTP 404.
+
+The request must include one `user_id`; all returned data is scoped to that
+learner. The endpoint does not return submitted source code or evaluation
+details.
+
 ## Judge0 configuration
 
 Without a judge the API returns HTTP 503 for every submission and saves
@@ -190,14 +206,15 @@ npm run build
 
 There is no authentication layer. `user_id` is supplied by the client and
 trusted, and the list endpoints (`/submissions/`, `/mastery/`, `/mistakes/`)
-accept an optional `user_id` filter but are not access-controlled. This is
-acceptable for a local demo only; put the API behind authentication before
-exposing it. Keep all keys in `backend/.env`, which is git-ignored.
+accept an optional `user_id` filter but are not access-controlled. `/progress/`
+requires a `user_id`, but is likewise not access-controlled. This is acceptable
+for a local demo only; put the API behind authentication before exposing it.
+Keep all keys in `backend/.env`, which is git-ignored.
 
 ## Project layout
 
 ```
-backend/app/routes        FastAPI routers (users, patterns, problems, submissions, mistakes, mastery, recommendations)
+backend/app/routes        FastAPI routers (users, patterns, problems, submissions, mistakes, mastery, recommendations, progress)
 backend/app/services      evaluator (Judge0), feedback, mastery, mistake, recommendation
 backend/app/seed.py       validated, idempotent seeding; --sqlite PATH for isolated demo files
 backend/tests             unittest suite (mocked judge/AI) + reference solutions
