@@ -151,6 +151,22 @@ includes the selection reason. Learners without history start with the easiest
 available unattempted problem; if no eligible problems exist, the endpoint
 returns HTTP 404.
 
+## MVP demo checklist
+
+Use the isolated SQLite setup above, start the backend and frontend, then visit
+`/practice` to create a learner. Submit a solution for a problem marked
+evaluable with a real `JUDGE0_URL` configured; the demo setup leaves Judge0
+disabled, so submissions correctly return 503 until a judge is configured.
+After a saved attempt, visit `/dashboard` for analytics, `/recommendations` for
+the next suggested problem, and `/revisions` for due review tasks. The learner
+ID is shared between these pages and practice.
+
+An empty revision list immediately after practice is expected: the current
+mastery scheduler sets the first revision at least one day later. The automated
+cross-module journey test makes an attempt's saved date due in its isolated
+in-memory database and mocks the judge and feedback; it does not call Judge0,
+an AI provider, or PostgreSQL.
+
 ## Judge0 configuration
 
 Without a judge the API returns HTTP 503 for every submission and saves
