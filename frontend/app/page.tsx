@@ -42,6 +42,18 @@ export default function Home() {
           >
             View progress
           </Link>
+          <Link
+            href="/recommendations"
+            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-800 transition hover:border-indigo-400"
+          >
+            Next problem
+          </Link>
+          <Link
+            href="/revisions"
+            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-800 transition hover:border-indigo-400"
+          >
+            Due revisions
+          </Link>
           <a
             href="/api/backend/docs"
             target="_blank"

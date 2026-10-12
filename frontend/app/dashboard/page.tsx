@@ -220,6 +220,18 @@ export default function DashboardPage() {
               Practice
             </Link>
             <Link
+              href="/recommendations"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-indigo-400"
+            >
+              Next problem
+            </Link>
+            <Link
+              href="/revisions"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-indigo-400"
+            >
+              Revisions
+            </Link>
+            <Link
               href="/"
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium transition hover:border-indigo-400"
             >
