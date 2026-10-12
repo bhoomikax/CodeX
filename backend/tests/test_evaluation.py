@@ -1,7 +1,7 @@
 import json
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 
@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
-from app.models import Pattern, Problem, User
+from app.models import Pattern, PatternMastery, Problem, Submission, User
 from app.routes.submissions import create_submission
 from fastapi import HTTPException
 from app.schemas.submission import SubmissionCreate
@@ -46,9 +46,74 @@ class JudgeTests(unittest.TestCase):
     def test_unsupported_language_and_missing_cases_are_rejected(self):
         with self.assertRaises(ValueError):
             evaluate_submission(self.problem, "", "javascript")
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {"JUDGE0_URL": ""}):
+            with self.assertRaises(EvaluationUnavailable):
+                evaluate_submission(self.problem, "x", "python")
+        with patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"}, clear=True):
             with self.assertRaises(EvaluationUnavailable):
                 evaluate_submission(type("Problem", (), {"test_cases": []})(), "x", "python")
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid", "JUDGE0_API_KEY": "test-token"})
+    @patch("app.services.evaluator.time.sleep")
+    @patch("app.services.evaluator.urlopen")
+    def test_wait_false_submission_is_polled_with_auth(self, open_url, _sleep):
+        created = MagicMock()
+        created.__enter__.return_value = created
+        created.read.return_value = b'{"token":"submission-token"}'
+        completed = MagicMock()
+        completed.__enter__.return_value = completed
+        completed.read.return_value = b'{"token":"submission-token","status":{"id":3,"description":"Accepted"},"stdout":"4\\n"}'
+        open_url.side_effect = [created, completed]
+
+        from app.services.evaluator import _judge
+        result = _judge("print(input())", "python", "4\n", "https://judge.invalid")
+
+        self.assertEqual(result["status"]["id"], 3)
+        post, poll = [call.args[0] for call in open_url.call_args_list]
+        self.assertEqual(post.full_url, "https://judge.invalid/submissions?base64_encoded=false&wait=false")
+        self.assertEqual(post.get_method(), "POST")
+        self.assertEqual(json.loads(post.data), {"source_code": "print(input())", "language_id": 71, "stdin": "4\n"})
+        self.assertEqual(poll.full_url, "https://judge.invalid/submissions/submission-token?base64_encoded=false")
+        self.assertEqual(poll.get_method(), "GET")
+        self.assertEqual({key.lower(): value for key, value in post.header_items()}["x-auth-token"], "test-token")
+
+    @patch.dict(os.environ, {"JUDGE0_TIMEOUT_SECONDS": "0.5"})
+    @patch("app.services.evaluator.time.sleep")
+    @patch("app.services.evaluator.time.monotonic", side_effect=[0, 0, 0, 1])
+    @patch("app.services.evaluator.urlopen")
+    def test_pending_poll_timeout_is_an_evaluation_error(self, open_url, _clock, _sleep):
+        pending = MagicMock()
+        pending.__enter__.return_value = pending
+        pending.read.return_value = b'{"status":{"id":1,"description":"In Queue"}}'
+        open_url.return_value = pending
+
+        from app.services.evaluator import _poll
+        with self.assertRaises(EvaluationError):
+            _poll("https://judge.invalid", "submission-token", {})
+
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid", "JUDGE0_EVALUATION_TIMEOUT_SECONDS": "1"})
+    @patch("app.services.evaluator.time.monotonic", side_effect=[0, 0, 2])
+    @patch("app.services.evaluator._judge", return_value={"status": {"id": 3}, "stdout": "4"})
+    def test_evaluation_deadline_is_shared_across_test_cases(self, judge, _clock):
+        problem = type("Problem", (), {"test_cases": [
+            {"input": "", "expected_output": "4"},
+            {"input": "", "expected_output": "4"},
+        ]})()
+        with self.assertRaises(EvaluationError):
+            evaluate_submission(problem, "code", "python")
+        judge.assert_called_once()
+
+    @patch.dict(os.environ, {"JUDGE0_TIMEOUT_SECONDS": "1"})
+    @patch("app.services.evaluator.urlopen")
+    def test_malformed_poll_response_is_an_evaluation_error(self, open_url):
+        malformed = MagicMock()
+        malformed.__enter__.return_value = malformed
+        malformed.read.return_value = b'{"status":null}'
+        open_url.return_value = malformed
+
+        from app.services.evaluator import _poll
+        with self.assertRaises(EvaluationError):
+            _poll("https://judge.invalid", "submission-token", {})
 
     @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
     @patch("app.services.evaluator._judge", side_effect=EvaluationError("offline"))
@@ -116,4 +181,14 @@ class SubmissionFlowTests(unittest.TestCase):
             create_submission(SubmissionCreate(user_id=self.user_id, problem_id=self.problem_id,
                                                code="x", language="javascript"), db=self.session)
         self.assertEqual(error.exception.status_code, 422)
+
+    @patch("app.routes.submissions.evaluate_submission", side_effect=EvaluationError("judge unavailable"))
+    def test_judge_failure_is_reported_without_persisting_false_result(self, _evaluate):
+        request = SubmissionCreate(user_id=self.user_id, problem_id=self.problem_id,
+                                   code="solution", language="python")
+        with self.assertRaises(HTTPException) as error:
+            create_submission(request, db=self.session)
+        self.assertEqual(error.exception.status_code, 502)
+        self.assertEqual(self.session.query(Submission).count(), 0)
+        self.assertEqual(self.session.query(PatternMastery).count(), 0)
 

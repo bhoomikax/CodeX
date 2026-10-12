@@ -25,7 +25,7 @@ CodeX is a coding practice and personalized learning app. Submission correctness
 
 4. Create a user with `POST /users/` (example below) and keep the returned ID. In `frontend`, copy `.env.example` to `.env.local`, then run `npm ci` and `npm run dev`. The Next rewrite sends `/api/backend` requests to `BACKEND_API_URL`.
 
-For live evaluation, set `JUDGE0_URL` and, if your Judge0 instance requires it, `JUDGE0_API_KEY` in `backend/.env`. Judge timeouts are limited by `JUDGE0_TIMEOUT_SECONDS` (default 15). If no judge URL is configured, submissions return HTTP 503 and do not save an unevaluated attempt or update mastery. Problems without test cases return the same response. Add cases to a problem's `test_cases` JSON list, each shaped as `{"input":"...","expected_output":"...","visible":false}`. Judge input/output is stdin/stdout; Java submissions should use Judge0's `Main` entry point.
+For live evaluation, set `JUDGE0_URL` and, if your Judge0 instance requires it, `JUDGE0_API_KEY` in `backend/.env`. Each Judge0 request is limited by `JUDGE0_TIMEOUT_SECONDS` (default 15); a whole evaluation across all test cases is limited by `JUDGE0_EVALUATION_TIMEOUT_SECONDS` (default 35), below the practice page's 45-second request timeout. If no judge URL is configured, submissions return HTTP 503 and do not save an unevaluated attempt or update mastery. Problems without test cases return the same response. Add cases to a problem's `test_cases` JSON list, each shaped as `{"input":"...","expected_output":"...","visible":false}`. Judge input/output is stdin/stdout; Java submissions should use Judge0's `Main` entry point.
 
 ### Optional AI feedback
 
