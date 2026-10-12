@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Practice | PatternIQ",
+  title: "Practice | CodeX",
   description: "Practice coding problems and learn from every attempt.",
 };
 

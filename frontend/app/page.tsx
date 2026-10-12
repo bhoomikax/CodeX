@@ -20,7 +20,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col bg-[#f5f6f8] px-4 py-12 text-slate-900 sm:px-8">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">
-          PatternIQ
+          CodeX
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
           Master coding patterns, one evaluated attempt at a time.
