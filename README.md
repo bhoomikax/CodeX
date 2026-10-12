@@ -120,6 +120,23 @@ The request must include one `user_id`; all returned data is scoped to that
 learner. The endpoint does not return submitted source code or evaluation
 details.
 
+## Adaptive revisions
+
+`GET /revisions/?user_id=<learner-id>` returns an array containing at most one
+revision recommendation for each of the learner's patterns whose persisted
+`next_revision_at` is due. Results are ordered by lowest mastery first, then
+oldest due date. Weak patterns select the easiest evaluable associated problem;
+developing patterns select the available difficulty closest to Medium; strong
+patterns select the hardest evaluable problem. Every result includes the
+pattern, mastery score, due date, selected problem, priority, and an
+explanation. Problems without usable test cases are never selected. A valid
+learner with no mastery records, no due revisions, or no evaluable problem for
+their due patterns receives an empty array. A nonpositive ID returns HTTP 422
+and an unknown learner returns HTTP 404.
+
+The selection is a deterministic, rule-based MVP; it does not use machine
+learning.
+
 ## Judge0 configuration
 
 Without a judge the API returns HTTP 503 for every submission and saves
@@ -214,7 +231,7 @@ Keep all keys in `backend/.env`, which is git-ignored.
 ## Project layout
 
 ```
-backend/app/routes        FastAPI routers (users, patterns, problems, submissions, mistakes, mastery, recommendations, progress)
+backend/app/routes        FastAPI routers (users, patterns, problems, submissions, mistakes, mastery, recommendations, progress, revisions)
 backend/app/services      evaluator (Judge0), feedback, mastery, mistake, recommendation
 backend/app/seed.py       validated, idempotent seeding; --sqlite PATH for isolated demo files
 backend/tests             unittest suite (mocked judge/AI) + reference solutions
