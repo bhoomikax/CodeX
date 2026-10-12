@@ -137,6 +137,20 @@ and an unknown learner returns HTTP 404.
 The selection is a deterministic, rule-based MVP; it does not use machine
 learning.
 
+## Adaptive practice recommendations
+
+`GET /recommendations/?user_id=<learner-id>` returns one deterministic
+recommendation using saved pattern mastery and the learner's submission
+history. Lower-mastery patterns are preferred; when mastery is missing, the
+observed correctness rate is used to rank patterns. Low mastery selects an
+easier problem, developing mastery targets a difficulty near the learner's
+most recent attempt, and strong mastery selects a harder problem. Previously
+attempted problems are skipped whenever an unattempted evaluable alternative
+exists. Only problems with usable test cases are eligible, and the response
+includes the selection reason. Learners without history start with the easiest
+available unattempted problem; if no eligible problems exist, the endpoint
+returns HTTP 404.
+
 ## Judge0 configuration
 
 Without a judge the API returns HTTP 503 for every submission and saves
