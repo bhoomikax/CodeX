@@ -74,9 +74,9 @@ class FeedbackTests(unittest.TestCase):
 
 class SubmissionFlowTests(unittest.TestCase):
     def setUp(self):
-        engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(engine)
-        self.session = sessionmaker(bind=engine)()
+        self.engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(self.engine)
+        self.session = sessionmaker(bind=self.engine)()
         user = User(name="Test", email="evaluation@example.com")
         pattern = Pattern(name="Binary Search")
         self.session.add_all([user, pattern])
@@ -89,6 +89,8 @@ class SubmissionFlowTests(unittest.TestCase):
 
     def tearDown(self):
         self.session.close()
+        Base.metadata.drop_all(bind=self.engine)
+        self.engine.dispose()
 
     @patch("app.routes.submissions.recommend_problem", return_value=None)
     @patch("app.routes.submissions.evaluate_submission", return_value=Evaluation("Accepted", True))

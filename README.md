@@ -4,22 +4,28 @@ CodeX is a coding practice and personalized learning app. Submission correctness
 
 ## Setup
 
-1. Start PostgreSQL with `docker compose up -d` from this directory.
-2. In `backend`, copy `.env.example` to `.env` and set `DATABASE_URL` and `JUDGE0_URL`. Set `JUDGE0_API_KEY` only when required by your Judge0 deployment. Startup creates tables and adds the two JSON columns to existing databases; no Alembic migration system exists in this project.
-3. Install and seed the backend:
+1. For PostgreSQL, `docker compose up -d` maps host port `5433` to container port `5432`. The checked-in `.env.example` matches this mapping. In `backend`, copy it to `.env` and set `DATABASE_URL`. Startup creates tables and adds the two JSON columns to existing databases; no Alembic migration system exists in this project.
+2. Install backend dependencies:
 
    ```powershell
    cd backend
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   pip install -r requirements.txt
-   python -m app.seed
-   uvicorn app.main:app --reload
+   if (!(Test-Path .\venv\Scripts\python.exe)) { python -m venv venv }
+   .\venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
+
+3. To prepare an isolated demo database, use a **new filename** from the `backend` directory. These commands do not seed the `DATABASE_URL` stored in `.env`:
+
+   ```powershell
+   $env:DATABASE_URL = "sqlite:///./codex-demo.sqlite3"
+   .\venv\Scripts\python.exe -m app.seed
+   .\venv\Scripts\python.exe -m uvicorn app.main:app --reload
+   ```
+
+   If `codex-demo.sqlite3` already exists, choose another new filename rather than overwriting it. The seed operation is idempotent for existing catalog rows, but adds the Binary Search demonstration cases to that database.
 
 4. Create a user with `POST /users/` (example below) and keep the returned ID. In `frontend`, copy `.env.example` to `.env.local`, then run `npm ci` and `npm run dev`. The Next rewrite sends `/api/backend` requests to `BACKEND_API_URL`.
 
-If no judge URL is configured, submission requests return HTTP 503 with an explicit evaluation-unavailable message and do not save a submission or change mastery. Problems without test cases return the same response. Add test cases to a problem's `test_cases` JSON list, each shaped as `{"input":"...","expected_output":"...","visible":false}`. Judge input/output is stdin/stdout; Java submissions should use Judge0's expected `Main` entry point.
+For live evaluation, set `JUDGE0_URL` and, if your Judge0 instance requires it, `JUDGE0_API_KEY` in `backend/.env`. Judge timeouts are limited by `JUDGE0_TIMEOUT_SECONDS` (default 15). If no judge URL is configured, submissions return HTTP 503 and do not save an unevaluated attempt or update mastery. Problems without test cases return the same response. Add cases to a problem's `test_cases` JSON list, each shaped as `{"input":"...","expected_output":"...","visible":false}`. Judge input/output is stdin/stdout; Java submissions should use Judge0's `Main` entry point.
 
 ### Optional AI feedback
 

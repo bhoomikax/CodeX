@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
-from app.models import Pattern, Problem, User
+from app.models import Pattern, PatternMastery, Problem, User
 from app.routes.mistakes import get_submission_mistakes
 from app.routes.submissions import create_submission
 from app.schemas.submission import SubmissionCreate
@@ -50,7 +50,7 @@ class MistakeTrackingTests(unittest.TestCase):
             )
 
         mistakes = get_submission_mistakes(
-            submission_id=submission.id,
+            submission_id=submission["id"],
             db=self.session,
         )
 
@@ -59,6 +59,10 @@ class MistakeTrackingTests(unittest.TestCase):
         self.assertEqual(mistakes[0].category, "edge_case")
         self.assertIn("differed", mistakes[0].explanation)
         self.assertIn("Trace", mistakes[0].correction)
+        mastery = self.session.query(PatternMastery).filter_by(user_id=self.user_id).one()
+        self.assertEqual(mastery.total_attempts, 1)
+        self.assertEqual(mastery.correct_attempts, 0)
+        self.assertEqual(mastery.consecutive_correct, 0)
 
     def test_client_verdict_is_not_part_of_submission_input(self):
         parsed = SubmissionCreate(user_id=self.user_id, problem_id=self.problem_id,
