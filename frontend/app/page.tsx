@@ -36,6 +36,12 @@ export default function Home() {
           >
             Start practicing
           </Link>
+          <Link
+            href="/dashboard"
+            className="rounded-xl border border-indigo-200 bg-white px-6 py-3 text-center font-semibold text-indigo-700 transition hover:border-indigo-400"
+          >
+            View progress
+          </Link>
           <a
             href="/api/backend/docs"
             target="_blank"

@@ -1,5 +1,6 @@
 const API_PREFIX = "/api/backend";
 const REQUEST_TIMEOUT_MS = 45_000;
+export const LEARNER_STORAGE_KEY = "patterniq.learnerId";
 
 export interface SampleCase {
   input: string;
@@ -68,6 +69,53 @@ export interface Recommendation {
   title: string;
   difficulty: string;
   pattern: string;
+  reason: string;
+  priority: number;
+}
+
+export interface PatternProgress {
+  pattern_id: number;
+  pattern_name: string;
+  mastery_score: number;
+  confidence_score: number;
+  retention_score: number;
+  total_attempts: number;
+  correct_attempts: number;
+  accuracy_percentage: number;
+  consecutive_correct: number;
+}
+
+export interface RecentSubmission {
+  id: number;
+  problem_id: number;
+  problem_title: string;
+  pattern_id: number;
+  pattern_name: string;
+  language: string;
+  status: string;
+  is_correct: boolean;
+  submitted_at: string | null;
+}
+
+export interface LearnerProgress {
+  user_id: number;
+  total_attempts: number;
+  correct_attempts: number;
+  accuracy_percentage: number;
+  patterns: PatternProgress[];
+  strongest_pattern: PatternProgress | null;
+  weakest_pattern: PatternProgress | null;
+  recent_submissions: RecentSubmission[];
+}
+
+export interface RevisionTask {
+  pattern_id: number;
+  pattern_name: string;
+  mastery_score: number;
+  due_at: string;
+  problem_id: number;
+  problem_title: string;
+  difficulty: string;
   reason: string;
   priority: number;
 }

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   apiRequest,
+  LEARNER_STORAGE_KEY,
   type Pattern,
   type Problem,
   type Submission,
@@ -14,8 +15,6 @@ import {
 interface AttemptFeedback {
   submission: Submission;
 }
-
-const LEARNER_STORAGE_KEY = "patterniq.learnerId";
 
 function readStoredLearnerId(): string {
   try {
@@ -68,7 +67,26 @@ export default function PracticePage() {
         if (!cancelled) {
           setProblems(problemList);
           setPatterns(patternList);
+          const query = new URLSearchParams(window.location.search);
+          const requestedPatternId = Number(query.get("pattern_id"));
+          const requestedProblemId = Number(query.get("problem_id"));
+          const requestedProblem = problemList.find(
+            (problem) =>
+              problem.id === requestedProblemId &&
+              problem.test_cases_available &&
+              (!Number.isInteger(requestedPatternId) ||
+                requestedPatternId <= 0 ||
+                problem.pattern_id === requestedPatternId),
+          );
           const firstRunnable =
+            requestedProblem ??
+            problemList.find(
+              (problem) =>
+                problem.test_cases_available &&
+                Number.isInteger(requestedPatternId) &&
+                requestedPatternId > 0 &&
+                problem.pattern_id === requestedPatternId,
+            ) ??
             problemList.find((problem) => problem.test_cases_available) ??
             problemList[0];
           setProblemId(firstRunnable ? String(firstRunnable.id) : "");
@@ -226,6 +244,12 @@ export default function PracticePage() {
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:border-indigo-400"
           >
             Home
+          </Link>
+          <Link
+            href="/dashboard"
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:border-indigo-400"
+          >
+            Progress dashboard
           </Link>
         </header>
 
