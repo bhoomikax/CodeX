@@ -25,7 +25,7 @@ def get_recommendation(
     if recommendation is None:
         raise HTTPException(
             status_code=404,
-            detail="No uncompleted problems are available",
+            detail="No problems with usable test cases are available",
         )
 
     return recommendation

@@ -23,6 +23,8 @@ from app.routes import (
     mistakes,
     mastery,
     recommendations,
+    progress,
+    revisions,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -59,6 +61,8 @@ app.include_router(submissions.router)
 app.include_router(mistakes.router)
 app.include_router(mastery.router)
 app.include_router(recommendations.router)
+app.include_router(progress.router)
+app.include_router(revisions.router)
 
 @app.get("/")
 def root():

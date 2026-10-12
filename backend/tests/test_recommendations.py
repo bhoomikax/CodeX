@@ -125,6 +125,55 @@ class RecommendationTests(unittest.TestCase):
         self.assertEqual(recommendation.difficulty, "Easy")
         self.assertIn("Start with", recommendation.reason)
 
+    def test_attempt_history_identifies_weak_pattern_without_mastery_record(self):
+        self._mastery(self.strong_pattern_id, 80)
+        self.session.add(
+            Submission(
+                user_id=self.user_id,
+                problem_id=self.weak_easy.id,
+                language="python",
+                status="Wrong Answer",
+                is_correct=False,
+            )
+        )
+        self.session.commit()
+
+        recommendation = recommend_problem(self.session, self.user_id)
+
+        self.assertEqual(recommendation.pattern, "Weak Pattern")
+        self.assertEqual(recommendation.problem_id, self.weak_easy_followup.id)
+        self.assertIn("0% correct", recommendation.reason)
+
+    def test_incorrectly_attempted_problem_is_avoided_when_an_alternative_exists(self):
+        self._mastery(self.weak_pattern_id, 25)
+        self.session.add(
+            Submission(
+                user_id=self.user_id,
+                problem_id=self.weak_easy.id,
+                language="python",
+                status="Wrong Answer",
+                is_correct=False,
+            )
+        )
+        self.session.commit()
+
+        recommendation = recommend_problem(self.session, self.user_id)
+
+        self.assertEqual(recommendation.problem_id, self.weak_easy_followup.id)
+        self.assertNotEqual(recommendation.problem_id, self.weak_easy.id)
+        self.assertNotIn("All available problems", recommendation.reason)
+
+    def test_problems_without_runnable_cases_are_never_recommended(self):
+        self.session.add(Problem(title="No cases", platform="Test", difficulty="Easy",
+                                 pattern_id=self.weak_pattern_id, test_cases=[]))
+        self.session.add(Problem(title="Broken cases", platform="Test", difficulty="Easy",
+                                 pattern_id=self.weak_pattern_id, test_cases=[{"input": 1}]))
+        for problem in self.session.query(Problem).all():
+            problem.test_cases = problem.test_cases if problem.title in ("No cases", "Broken cases") else []
+        self.session.commit()
+
+        self.assertIsNone(recommend_problem(self.session, self.user_id))
+
     def test_completed_problem_is_excluded(self):
         self.session.add(
             Submission(

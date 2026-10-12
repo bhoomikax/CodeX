@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -73,8 +73,14 @@ def create_mistake(
 
 
 @router.get("/", response_model=list[MistakeResponse])
-def get_mistakes(db: Session = Depends(get_db)):
-    return db.query(Mistake).all()
+def get_mistakes(
+    user_id: int | None = Query(default=None, gt=0, description="Only return this learner's mistakes"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Mistake)
+    if user_id is not None:
+        query = query.join(Submission, Submission.id == Mistake.submission_id).filter(Submission.user_id == user_id)
+    return query.order_by(Mistake.id).all()
 
 
 @router.get(
