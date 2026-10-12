@@ -10,7 +10,7 @@ class ProblemResponse(BaseModel):
     difficulty: str
     pattern_id: int
     description: str | None = None
-    description: str | None = None
+    test_cases_available: bool = False
 
     class Config:
         from_attributes = True

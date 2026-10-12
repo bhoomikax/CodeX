@@ -1,7 +1,10 @@
 #test 
 
 import unittest
+import os
 from datetime import datetime, timedelta
+
+os.environ.setdefault("DATABASE_URL", "sqlite://")
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

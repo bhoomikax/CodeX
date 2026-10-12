@@ -71,7 +71,8 @@ def update_mastery(
         100
     )
 
-    mastery.last_attempted_at = datetime.utcnow()
+    now = datetime.utcnow()
+    mastery.last_attempted_at = now
 
     # Revision interval based on mastery
     revision_days = max(
@@ -80,10 +81,10 @@ def update_mastery(
     )
 
     mastery.next_revision_at = (
-        mastery.last_attempted_at
+        now
         + timedelta(days=revision_days)
     )
 
-    mastery.updated_at = datetime.utcnow()
+    mastery.updated_at = now
 
     return mastery

@@ -1,7 +1,7 @@
 import os
 
 from fastapi import FastAPI
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
@@ -26,6 +26,14 @@ from app.routes import (
 )
 
 Base.metadata.create_all(bind=engine)
+
+# create_all does not alter existing tables. Keep the project's lightweight
+# startup schema strategy while adding the two nullable/JSON feature columns.
+with engine.begin() as connection:
+    for table, column in (("problems", "test_cases"), ("submissions", "evaluation_details")):
+        columns = {item["name"] for item in inspect(connection).get_columns(table)}
+        if column not in columns:
+            connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} JSON"))
 
 app = FastAPI(title="CodeX API")
 

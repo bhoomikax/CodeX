@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON
 from app.database import Base
 
 
@@ -12,4 +12,9 @@ class Problem(Base):
     url = Column(String(500), nullable=True)
     difficulty = Column(String(20), nullable=False)
     description = Column(Text, nullable=True)
+    test_cases = Column(JSON, nullable=False, default=list)
     pattern_id = Column(Integer, ForeignKey("patterns.id"), nullable=False)
+
+    @property
+    def test_cases_available(self):
+        return bool(self.test_cases)

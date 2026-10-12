@@ -1,33 +1,13 @@
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
-
-from app.schemas.mistake import MistakeCategory
+from pydantic import BaseModel, Field
 
 
 class SubmissionCreate(BaseModel):
     user_id: int
     problem_id: int
-    code: str | None = None
+    code: str = Field(min_length=1, max_length=50000)
     language: str
-    status: str
-    is_correct: bool
-    mistake_category: MistakeCategory | None = None
-    mistake_explanation: str | None = None
-    mistake_correction: str | None = None
-
-    @model_validator(mode="after")
-    def validate_mistake_feedback(self):
-        if self.is_correct and any(
-            value is not None
-            for value in (
-                self.mistake_category,
-                self.mistake_explanation,
-                self.mistake_correction,
-            )
-        ):
-            raise ValueError("Mistake feedback can only be attached to an incorrect submission")
-        return self
 
 
 class SubmissionResponse(BaseModel):
@@ -38,6 +18,10 @@ class SubmissionResponse(BaseModel):
     language: str
     status: str
     is_correct: bool
+    evaluation_details: dict | None = None
+    mastery: dict | None = None
+    mistake: dict | None = None
+    recommendation: dict | None = None
     submitted_at: datetime
 
     class Config:

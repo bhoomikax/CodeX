@@ -1,14 +1,18 @@
 import unittest
+import os
+from unittest.mock import patch
 
-from pydantic import ValidationError
+os.environ.setdefault("DATABASE_URL", "sqlite://")
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
-from app.models import Mistake, Pattern, Problem, User
+from app.models import Pattern, Problem, User
 from app.routes.mistakes import get_submission_mistakes
 from app.routes.submissions import create_submission
 from app.schemas.submission import SubmissionCreate
+from app.services.evaluator import Evaluation
 
 
 class MistakeTrackingTests(unittest.TestCase):
@@ -38,16 +42,12 @@ class MistakeTrackingTests(unittest.TestCase):
         self.engine.dispose()
 
     def test_incorrect_submission_creates_retrievable_mistake(self):
-        submission = create_submission(
-            SubmissionCreate(
-                user_id=self.user_id,
-                problem_id=self.problem_id,
-                language="text",
-                status="Wrong Answer",
-                is_correct=False,
-            ),
-            db=self.session,
-        )
+        self.session.query(Problem).filter_by(id=self.problem_id).update({"test_cases": [{"input": "", "expected_output": ""}]})
+        with patch("app.routes.submissions.evaluate_submission", return_value=Evaluation("Wrong Answer", False, failed_test=1)), patch("app.routes.submissions.recommend_problem", return_value=None):
+            submission = create_submission(
+                SubmissionCreate(user_id=self.user_id, problem_id=self.problem_id, code="pass", language="python"),
+                db=self.session,
+            )
 
         mistakes = get_submission_mistakes(
             submission_id=submission.id,
@@ -55,56 +55,12 @@ class MistakeTrackingTests(unittest.TestCase):
         )
 
         self.assertEqual(len(mistakes), 1)
-        self.assertEqual(mistakes[0].submission_id, submission.id)
-        self.assertEqual(mistakes[0].category, "unknown")
-        self.assertIn("not automatically diagnosed", mistakes[0].explanation)
-        self.assertIn("edge cases", mistakes[0].correction)
+        self.assertEqual(mistakes[0].submission_id, submission["id"])
+        self.assertEqual(mistakes[0].category, "edge_case")
+        self.assertIn("differed", mistakes[0].explanation)
+        self.assertIn("Trace", mistakes[0].correction)
 
-    def test_incorrect_submission_accepts_explicit_feedback(self):
-        submission = create_submission(
-            SubmissionCreate(
-                user_id=self.user_id,
-                problem_id=self.problem_id,
-                language="python",
-                status="Wrong Answer",
-                is_correct=False,
-                mistake_category="edge_case",
-                mistake_explanation="The empty input was not handled.",
-                mistake_correction="Return the required result for empty input.",
-            ),
-            db=self.session,
-        )
-
-        mistake = (
-            self.session.query(Mistake)
-            .filter_by(submission_id=submission.id)
-            .one()
-        )
-        self.assertEqual(mistake.category, "edge_case")
-        self.assertEqual(mistake.explanation, "The empty input was not handled.")
-        self.assertEqual(
-            mistake.correction,
-            "Return the required result for empty input.",
-        )
-
-    def test_correct_submission_cannot_include_mistake_feedback(self):
-        with self.assertRaises(ValidationError):
-            SubmissionCreate(
-                user_id=self.user_id,
-                problem_id=self.problem_id,
-                language="python",
-                status="Accepted",
-                is_correct=True,
-                mistake_category="unknown",
-            )
-
-    def test_invalid_mistake_category_is_rejected(self):
-        with self.assertRaises(ValidationError):
-            SubmissionCreate(
-                user_id=self.user_id,
-                problem_id=self.problem_id,
-                language="python",
-                status="Wrong Answer",
-                is_correct=False,
-                mistake_category="ai_detected_bug",
-            )
+    def test_client_verdict_is_not_part_of_submission_input(self):
+        parsed = SubmissionCreate(user_id=self.user_id, problem_id=self.problem_id,
+                                  code="pass", language="python", status="Accepted", is_correct=True)
+        self.assertFalse(hasattr(parsed, "is_correct"))

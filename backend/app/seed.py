@@ -44,6 +44,16 @@ def seed_problems(db, pattern_map):
         ).first()
 
         if existing:
+            if item["external_id"] == "704" and not existing.test_cases:
+                existing.description = (
+                    "Console I/O demonstration: read n, then n sorted integers, then target. "
+                    "Print the zero-based index of target, or -1 if it is absent."
+                )
+                existing.test_cases = [
+                    {"input": "6\n-1 0 3 5 9 12\n9\n", "expected_output": "4\n", "visible": True},
+                    {"input": "6\n-1 0 3 5 9 12\n2\n", "expected_output": "-1\n", "visible": True},
+                    {"input": "1\n5\n5\n", "expected_output": "0\n", "visible": False},
+                ]
             continue
 
         problem = Problem(
@@ -52,7 +62,22 @@ def seed_problems(db, pattern_map):
             external_id=item["external_id"],
             url=item["url"],
             difficulty=item["difficulty"],
-            pattern_id=pattern_map[item["pattern"]]
+            pattern_id=pattern_map[item["pattern"]],
+            description=(
+                "Console I/O demonstration: read n, then n sorted integers, then target. "
+                "Print the zero-based index of target, or -1 if it is absent."
+                if item["external_id"] == "704"
+                else None
+            ),
+            test_cases=(
+                [
+                    {"input": "6\n-1 0 3 5 9 12\n9\n", "expected_output": "4\n", "visible": True},
+                    {"input": "6\n-1 0 3 5 9 12\n2\n", "expected_output": "-1\n", "visible": True},
+                    {"input": "1\n5\n5\n", "expected_output": "0\n", "visible": False},
+                ]
+                if item["external_id"] == "704"
+                else []
+            ),
         )
 
         db.add(problem)

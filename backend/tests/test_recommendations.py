@@ -1,4 +1,7 @@
 import unittest
+import os
+
+os.environ.setdefault("DATABASE_URL", "sqlite://")
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -44,6 +47,7 @@ class RecommendationTests(unittest.TestCase):
             platform="Test",
             difficulty=difficulty,
             pattern_id=pattern_id,
+            test_cases=[{"input": "", "expected_output": ""}],
         )
         self.session.add(problem)
         self.session.flush()

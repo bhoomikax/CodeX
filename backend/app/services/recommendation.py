@@ -18,7 +18,11 @@ def recommend_problem(
     db: Session,
     user_id: int,
 ) -> RecommendationResponse | None:
-    problems = db.query(Problem).order_by(Problem.id).all()
+    problems = [
+        problem
+        for problem in db.query(Problem).order_by(Problem.id).all()
+        if problem.test_cases
+    ]
     if not problems:
         return None
 
