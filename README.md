@@ -29,15 +29,21 @@ if (!(Test-Path .\venv\Scripts\python.exe)) { python -m venv venv }
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
 
 # Pick a NEW file name if codex-demo.sqlite3 already exists and you want a clean slate.
+# --sqlite seeds that file directly; the database in .env is never opened.
+.\venv\Scripts\python.exe -m app.seed --sqlite .\codex-demo.sqlite3
+
 $env:DATABASE_URL = "sqlite:///./codex-demo.sqlite3"
 $env:JUDGE0_URL = ""          # leave blank until you have a judge (see below)
-.\venv\Scripts\python.exe -m app.seed
 .\venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
 The API is now at `http://127.0.0.1:8000` (interactive docs at `/docs`).
 Environment variables set in the shell take precedence over `backend/.env`,
-so the commands above are safe even if `.env` points at PostgreSQL.
+so the commands above are safe even if `.env` points at PostgreSQL. (Without
+`--sqlite`, `python -m app.seed` seeds whatever `DATABASE_URL` points at, so
+set the variable first.) SQLite files are git-ignored and created per
+developer; a fresh seed always produces the same rows in the same order
+(patterns in `patterns.json` order, problems in `problems.json` order).
 
 ### 2. Frontend (second terminal)
 
@@ -142,7 +148,11 @@ Copy-Item .env.example .env # then edit DATABASE_URL etc.
 Startup runs `create_all` and adds the `problems.test_cases` and
 `submissions.evaluation_details` JSON columns to older databases. There is no
 migration framework. Seeding is idempotent: existing patterns and problems are
-untouched, and test cases are only added to problems that have none.
+untouched, and test cases are only added to problems that have none. Before
+writing anything, the seed command cross-checks the three JSON files (unknown
+or duplicate patterns, duplicate problems, test-case entries for unknown
+problems, malformed or hidden-only cases) and exits with status 2 if they are
+inconsistent, leaving the database untouched.
 
 ## Verification
 
@@ -159,7 +169,7 @@ npm run build
 
 | Check | Uses live services? |
 | --- | --- |
-| Backend unit tests (59) | No. Judge0 and the AI provider are mocked; databases are in-memory SQLite |
+| Backend unit tests (81) | No. Judge0 and the AI provider are mocked; databases are in-memory SQLite or throwaway temp files |
 | Frontend lint / build | No |
 | `backend/scripts/live_judge0_check.py` | **Yes.** Contacts the configured judge through the running API. See `docs/live-judge0-test-plan.md`; run only when you approve live testing |
 
@@ -189,7 +199,7 @@ exposing it. Keep all keys in `backend/.env`, which is git-ignored.
 ```
 backend/app/routes        FastAPI routers (users, patterns, problems, submissions, mistakes, mastery, recommendations)
 backend/app/services      evaluator (Judge0), feedback, mastery, mistake, recommendation
-backend/app/seed.py       idempotent seeding with the SQLite-only safety guard
+backend/app/seed.py       validated, idempotent seeding; --sqlite PATH for isolated demo files
 backend/tests             unittest suite (mocked judge/AI) + reference solutions
 backend/scripts           live_judge0_check.py (manual, live)
 data/                     patterns, problems, verified test cases

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SampleCase(BaseModel):
@@ -7,6 +7,8 @@ class SampleCase(BaseModel):
 
 
 class ProblemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     platform: str
@@ -18,6 +20,3 @@ class ProblemResponse(BaseModel):
     test_cases_available: bool = False
     # Only cases flagged visible are exposed; hidden expected outputs stay server-side.
     sample_cases: list[SampleCase] = []
-
-    class Config:
-        from_attributes = True
