@@ -60,7 +60,7 @@ again no rows are written.
 | Symptom | Likely cause |
 | --- | --- |
 | `The external judge rejected the configured credentials` | HTTP 401: wrong or missing `JUDGE0_API_KEY`, or wrong header type (set `JUDGE0_AUTH_HEADER` or use a `*.rapidapi.com` host) |
-| `The external judge refused the request (HTTP 403)` | Same causes as above, or a CDN in front of the judge blocked the request (the evaluator sends `User-Agent: PatternIQ/1.0` because Cloudflare blocks urllib's default agent) |
+| `The external judge refused the request (HTTP 403)` | Same causes as above, or a CDN in front of the judge blocked the request (the evaluator sends `User-Agent: CodeX/1.0` because Cloudflare blocks urllib's default agent) |
 | `The external judge is rate limiting requests` | Public instance quota; wait or use your own instance |
 | `The judge did not return a result before the evaluation timeout` | Judge queue is slow; raise `JUDGE0_TIMEOUT_SECONDS` / `JUDGE0_EVALUATION_TIMEOUT_SECONDS` but keep the total under the frontend's 45 s |
 | Java reported as `Compilation Error` on a correct solution | The class must be named `Main` |

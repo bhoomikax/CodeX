@@ -1,10 +1,13 @@
-# PatternIQ (CodeX)
+# CodeX
 
-PatternIQ is a coding-practice and pattern-mastery app. Learners submit Python
+CodeX is a coding-practice and pattern-mastery app. Learners submit Python
 or Java solutions; the backend runs them in an external **Judge0** sandbox,
 stores the verdict, updates per-pattern mastery, records mistakes with
 feedback, and recommends the next problem. Code is never executed inside the
 FastAPI process, and the browser never decides a verdict.
+
+Project deliverables: [final project report](docs/CodeX_Project_Report.md) and
+[presentation outline](docs/CodeX_Presentation.md).
 
 - Backend: FastAPI + SQLAlchemy (`backend/`)
 - Frontend: Next.js 16 (`frontend/`)
@@ -245,7 +248,7 @@ npm run build
 
 | Check | Uses live services? |
 | --- | --- |
-| Backend unit tests (81) | No. Judge0 and the AI provider are mocked; databases are in-memory SQLite or throwaway temp files |
+| Backend unit tests (101) | No. Judge0 and the AI provider are mocked; databases are in-memory SQLite or throwaway temp files |
 | Frontend lint / build | No |
 | `backend/scripts/live_judge0_check.py` | **Yes.** Contacts the configured judge through the running API. See `docs/live-judge0-test-plan.md`; run only when you approve live testing |
 

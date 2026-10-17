@@ -95,7 +95,7 @@ class JudgeTests(unittest.TestCase):
 
         for request in (call.args[0] for call in open_url.call_args_list):
             headers = {key.lower(): value for key, value in request.header_items()}
-            self.assertEqual(headers["user-agent"], "PatternIQ/1.0")
+            self.assertEqual(headers["user-agent"], "CodeX/1.0")
 
     @patch.dict(os.environ, {"JUDGE0_TIMEOUT_SECONDS": "0.5"})
     @patch("app.services.evaluator.time.sleep")

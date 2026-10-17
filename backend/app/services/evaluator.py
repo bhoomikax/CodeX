@@ -13,7 +13,7 @@ MAX_CODE_BYTES = 50_000
 MAX_INPUT_BYTES = 10_000
 MAX_OUTPUT_BYTES = 50_000
 MAX_TEST_CASES = 50
-USER_AGENT = "PatternIQ/1.0"
+USER_AGENT = "CodeX/1.0"
 
 # Judge0 status ids: https://ce.judge0.com/#statuses-and-languages-status-get
 STATUS_PENDING = (1, 2)

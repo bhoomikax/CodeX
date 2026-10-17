@@ -230,7 +230,7 @@ def summarize(db) -> dict:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Seed the CodeX/PatternIQ database.")
+    parser = argparse.ArgumentParser(description="Seed the CodeX database.")
     parser.add_argument(
         "--confirm",
         action="store_true",

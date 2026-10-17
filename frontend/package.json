@@ -1,6 +1,7 @@
 {
-  "name": "frontend",
+  "name": "codex-frontend",
   "version": "0.1.0",
+  "description": "CodeX web client",
   "private": true,
   "scripts": {
     "dev": "next dev",
