@@ -193,10 +193,23 @@ by `backend/tests/test_seed_data.py` against the reference solutions in
 
 ## Optional AI feedback
 
-Set `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL` in `backend/.env` for an
-OpenAI-compatible `/chat/completions` service. Feedback is advisory only: it
-never changes a verdict, and if the provider is missing or fails, the saved
-feedback is rule-based and labelled `provider: rule_based`.
+Set `AI_API_URL`, `AI_API_KEY`, and `AI_MODEL` in `backend/.env` to enable an
+OpenAI-compatible chat completions service. For OpenAI, use
+`AI_API_URL=https://api.openai.com/v1`; the backend appends `/chat/completions`.
+The optional `AI_TIMEOUT_SECONDS` defaults to 8 seconds. Copy the blank values
+from `backend/.env.example`; keep the real key only in the backend environment
+and never add it to frontend variables or source control.
+
+The backend sends the problem title and description, language, submitted code,
+Judge0 verdict, compiler/runtime diagnostic, actual output, and (when present)
+the failed test's input and expected output. The failed case stays in the
+backend feedback request and is not added to the browser response. The result
+panel labels the Judge0 result as verified and separately labels generated
+feedback as advisory. Only Judge0 determines `status` and `is_correct`; AI
+feedback cannot change acceptance, persistence, mastery, mistake tracking, or
+recommendations. If configuration is absent or the provider times out, fails,
+or returns malformed JSON/fields, rule-based feedback is saved and labelled
+`provider: rule_based`.
 
 ## Using PostgreSQL instead
 

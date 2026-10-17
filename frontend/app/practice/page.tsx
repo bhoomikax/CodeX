@@ -459,6 +459,9 @@ export default function PracticePage() {
                         </span>
                       )}
                     </div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Verified execution result from Judge0
+                    </p>
                     {details?.error && (
                       <div>
                         <p className="text-xs font-semibold uppercase text-slate-500">Judge output</p>
@@ -477,11 +480,14 @@ export default function PracticePage() {
                     )}
                     {details?.feedback && (
                       <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+                          {details.feedback.provider === "ai" ? "AI-generated explanation (advisory)" : "Rule-based explanation"}
+                        </p>
                         <p className="font-semibold">{details.feedback.explanation}</p>
                         <p><span className="font-semibold">Hint:</span> {details.feedback.hint}</p>
                         <p><span className="font-semibold">Suggested correction:</span> {details.feedback.correction}</p>
                         <p className="text-xs text-slate-500">
-                          Feedback source: {details.feedback.provider === "ai" ? "AI assistant (advisory)" : "rule-based"}
+                          This explanation does not determine the verdict.
                         </p>
                       </div>
                     )}

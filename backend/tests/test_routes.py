@@ -98,6 +98,20 @@ class TransactionSafetyTests(RouteTestCase):
         self.assertEqual(result["evaluation_details"]["feedback"]["provider"], "rule_based")
         self.assertIsNone(result["mistake"])
 
+    @patch("app.routes.submissions.generate_feedback", return_value={
+        "provider": "ai", "explanation": "This is Accepted.", "hint": "hint", "correction": "fix",
+    })
+    def test_ai_claim_cannot_override_incorrect_verdict_or_learning_records(self, _feedback):
+        result = self.submit(self.alice, Evaluation("Wrong Answer", False, failed_test=1))
+        self.assertFalse(result["is_correct"])
+        self.assertEqual(result["status"], "Wrong Answer")
+        self.assertEqual(result["evaluation_details"]["feedback"]["provider"], "ai")
+        self.assertEqual(result["mastery"]["correct_attempts"], 0)
+        self.assertEqual(result["mastery"]["total_attempts"], 1)
+        self.assertEqual(result["mistake"]["category"], "edge_case")
+        self.assertEqual(result["mistake"]["explanation"], "This is Accepted.")
+        self.assertEqual(self.session.query(Submission).count(), 1)
+
     def test_language_is_normalised_when_saved(self):
         result = self.submit(self.alice, Evaluation("Accepted", True))
         self.assertEqual(result["language"], "python")

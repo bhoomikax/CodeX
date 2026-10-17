@@ -266,18 +266,63 @@ class JudgeTests(unittest.TestCase):
 
 
 class FeedbackTests(unittest.TestCase):
+    def setUp(self):
+        self.problem = type("Problem", (), {
+            "title": "Demo", "description": "Find the value", "test_cases": [
+                {"input": "bad input", "expected_output": "expected", "visible": False},
+            ],
+        })()
+
     def test_rule_based_fallback_is_labeled(self):
-        problem = type("Problem", (), {"title": "Demo", "description": "A demo"})()
-        result = generate_feedback(problem, "x", "python", Evaluation("Wrong Answer", False, failed_test=2))
+        result = generate_feedback(self.problem, "x", "python", Evaluation("Wrong Answer", False, failed_test=2))
         self.assertEqual(result["provider"], "rule_based")
         self.assertIn("test 2", result["explanation"])
 
     @patch.dict(os.environ, {"AI_API_KEY": "mock", "AI_API_URL": "https://ai.invalid/v1", "AI_MODEL": "mock"})
     @patch("app.services.feedback._request_provider", return_value={"explanation": "evidence", "hint": "hint", "correction": "fix"})
-    def test_mock_ai_provider(self, _provider):
-        problem = type("Problem", (), {"title": "Demo", "description": "A demo"})()
-        result = generate_feedback(problem, "x", "python", Evaluation("Wrong Answer", False))
+    def test_mock_ai_provider_receives_execution_evidence(self, provider):
+        evaluation = Evaluation("Wrong Answer", False, error="diagnostic", failed_test=1, actual_output="actual")
+        result = generate_feedback(self.problem, "submitted code", "python", evaluation)
         self.assertEqual(result["provider"], "ai")
+        evidence = provider.call_args.args[0]
+        self.assertEqual(evidence["problem"], "Demo")
+        self.assertEqual(evidence["description"], "Find the value")
+        self.assertEqual(evidence["code"], "submitted code")
+        self.assertEqual(evidence["verdict"], "Wrong Answer")
+        self.assertEqual(evidence["error"], "diagnostic")
+        self.assertEqual(evidence["actual_output"], "actual")
+        self.assertEqual(evidence["failed_case"], {"input": "bad input", "expected_output": "expected"})
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch("app.services.feedback._request_provider")
+    def test_missing_configuration_uses_fallback_without_provider_call(self, provider):
+        result = generate_feedback(self.problem, "x", "python", Evaluation("Accepted", True))
+        self.assertEqual(result["provider"], "rule_based")
+        provider.assert_not_called()
+
+    @patch.dict(os.environ, {"AI_API_KEY": "mock", "AI_API_URL": "https://ai.invalid/v1"})
+    @patch("app.services.feedback._request_provider", side_effect=ValueError("malformed"))
+    def test_malformed_provider_response_uses_fallback(self, _provider):
+        result = generate_feedback(self.problem, "x", "python", Evaluation("Wrong Answer", False, failed_test=1))
+        self.assertEqual(result["provider"], "rule_based")
+
+    @patch.dict(os.environ, {"AI_API_KEY": "mock", "AI_API_URL": "https://ai.invalid/v1"})
+    @patch("app.services.feedback._request_provider", side_effect=TimeoutError("provider unavailable"))
+    def test_provider_failure_uses_fallback(self, _provider):
+        result = generate_feedback(self.problem, "x", "python", Evaluation("Runtime Error", False))
+        self.assertEqual(result["provider"], "rule_based")
+        self.assertIn("runtime error", result["explanation"])
+
+    @patch.dict(os.environ, {"AI_API_KEY": "mock", "AI_API_URL": "https://ai.invalid/v1"})
+    @patch("app.services.feedback.urlopen")
+    def test_malformed_http_response_is_rejected(self, open_url):
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.read.return_value = b'{"choices": []}'
+        open_url.return_value = response
+        from app.services.feedback import _request_provider
+        with self.assertRaises((KeyError, IndexError, TypeError, ValueError)):
+            _request_provider({"verdict": "Wrong Answer"})
 
 
 class SubmissionFlowTests(unittest.TestCase):
