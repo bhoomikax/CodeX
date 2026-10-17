@@ -77,6 +77,26 @@ class JudgeTests(unittest.TestCase):
         self.assertEqual(poll.get_method(), "GET")
         self.assertEqual({key.lower(): value for key, value in post.header_items()}["x-auth-token"], "test-token")
 
+    @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid", "JUDGE0_API_KEY": ""})
+    @patch("app.services.evaluator.time.sleep")
+    @patch("app.services.evaluator.urlopen")
+    def test_user_agent_is_sent_on_submit_and_poll(self, open_url, _sleep):
+        # Cloudflare-fronted judges reject urllib's default agent with HTTP 403.
+        created = MagicMock()
+        created.__enter__.return_value = created
+        created.read.return_value = b'{"token":"t1"}'
+        completed = MagicMock()
+        completed.__enter__.return_value = completed
+        completed.read.return_value = b'{"token":"t1","status":{"id":3},"stdout":"4\\n"}'
+        open_url.side_effect = [created, completed]
+
+        from app.services.evaluator import _judge
+        _judge("print(input())", "python", "4\n", "https://judge.invalid")
+
+        for request in (call.args[0] for call in open_url.call_args_list):
+            headers = {key.lower(): value for key, value in request.header_items()}
+            self.assertEqual(headers["user-agent"], "PatternIQ/1.0")
+
     @patch.dict(os.environ, {"JUDGE0_TIMEOUT_SECONDS": "0.5"})
     @patch("app.services.evaluator.time.sleep")
     @patch("app.services.evaluator.time.monotonic", side_effect=[0, 0, 0, 1])
@@ -204,12 +224,14 @@ class JudgeTests(unittest.TestCase):
     def test_http_errors_become_evaluation_errors_without_leaking_secrets(self, open_url):
         from urllib.error import HTTPError
         from app.services.evaluator import _judge
-        for code, fragment in ((401, "credentials"), (403, "credentials"), (429, "rate limit"), (500, "HTTP 500")):
+        for code, fragment in ((401, "credentials"), (403, "HTTP 403"), (429, "rate limit"), (500, "HTTP 500")):
             open_url.side_effect = HTTPError("https://judge.invalid", code, "nope", {}, None)
             with self.assertRaises(EvaluationError) as error:
                 _judge("code", "python", "", "https://judge.invalid")
             self.assertIn(fragment, str(error.exception))
             self.assertNotIn("sekret-token", str(error.exception))
+            if code == 403:
+                self.assertNotIn("rejected the configured credentials", str(error.exception))
 
     @patch.dict(os.environ, {"JUDGE0_URL": "https://judge.invalid"})
     @patch("app.services.evaluator.urlopen")

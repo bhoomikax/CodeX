@@ -111,7 +111,7 @@ export default function RevisionsPage() {
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">
-              PatternIQ · Spaced practice
+              CodeX · Spaced practice
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
               Revision tasks

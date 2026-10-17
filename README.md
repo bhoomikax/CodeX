@@ -242,7 +242,8 @@ npm run build
 | --- | --- |
 | `503 Evaluation is unavailable: configure JUDGE0_URL` | No judge configured; nothing was saved |
 | `503 ... this problem has no configured test cases` / `... misconfigured` | Problem cannot be evaluated; nothing was saved |
-| `502 Evaluation Error: ... rejected the configured credentials` | Judge returned 401/403; check the key and header type |
+| `502 Evaluation Error: ... rejected the configured credentials` | Judge returned 401; check the key and header type |
+| `502 Evaluation Error: ... refused the request (HTTP 403)` | Bad key or header type, or a CDN in front of the judge (e.g. Cloudflare) blocked the request |
 | `502 Evaluation Error: ... rate limiting` | Judge returned 429 |
 | `502 Evaluation Error: ... did not return a result before the evaluation timeout` | Judge queue too slow for the configured budget |
 | `422 Supported languages are python and java` | Unsupported language |
