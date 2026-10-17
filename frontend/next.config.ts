@@ -10,6 +10,11 @@ const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "10.225.243.71")
 
 const nextConfig: NextConfig = {
   allowedDevOrigins,
+  experimental: {
+    // The /api/backend rewrite proxy defaults to a 30 s timeout, shorter than
+    // a submission's judge budget and the client's 45 s request timeout.
+    proxyTimeout: 60_000,
+  },
   async rewrites() {
     const backendUrl = (
       process.env.BACKEND_API_URL ?? "http://127.0.0.1:8000"

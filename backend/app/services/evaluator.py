@@ -13,6 +13,7 @@ MAX_CODE_BYTES = 50_000
 MAX_INPUT_BYTES = 10_000
 MAX_OUTPUT_BYTES = 50_000
 MAX_TEST_CASES = 50
+USER_AGENT = "PatternIQ/1.0"
 
 # Judge0 status ids: https://ce.judge0.com/#statuses-and-languages-status-get
 STATUS_PENDING = (1, 2)
@@ -117,8 +118,11 @@ def evaluate_submission(problem, source_code: str, language: str) -> Evaluation:
 
 def _auth_headers(base_url):
     """Judge0 CE / self-hosted instances use X-Auth-Token; RapidAPI-hosted
-    instances use the RapidAPI key headers. The key is never logged."""
-    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    instances use the RapidAPI key headers. The key is never logged.
+
+    An explicit User-Agent is required: Cloudflare-fronted judges (including
+    the public CE instance) block urllib's default "Python-urllib" agent."""
+    headers = {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": USER_AGENT}
     key = os.getenv("JUDGE0_API_KEY", "").strip()
     if not key:
         return headers
@@ -180,8 +184,13 @@ def _poll(base_url, token, headers, deadline=None):
 
 
 def _http_error_message(exc: HTTPError) -> str:
-    if exc.code in (401, 403):
+    if exc.code == 401:
         return "The external judge rejected the configured credentials"
+    if exc.code == 403:
+        # A 403 can come from the judge (bad key or header type) or from a CDN
+        # in front of it blocking the request, so do not assume credentials.
+        return ("The external judge refused the request (HTTP 403); check JUDGE0_API_KEY "
+                "and JUDGE0_AUTH_HEADER, or whether a proxy/CDN in front of the judge is blocking it")
     if exc.code == 429:
         return "The external judge is rate limiting requests; try again shortly"
     return f"The external judge returned HTTP {exc.code}"
