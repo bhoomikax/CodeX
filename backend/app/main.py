@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import FastAPI
@@ -5,6 +6,16 @@ from sqlalchemy import text, inspect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
+from app.services.feedback import ai_configuration, probe_provider
+
+# uvicorn only configures its own loggers; show the app's messages (such as
+# why AI feedback fell back to rule-based) in the same console.
+app_logger = logging.getLogger("app")
+if not app_logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s: %(message)s"))
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.INFO)
 from app.models import (
     User,
     Pattern,
@@ -72,6 +83,16 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/health/ai")
+def ai_health(probe: bool = False):
+    """AI feedback settings as this process sees them (never the key). With
+    ?probe=true, also make one small real provider request."""
+    result = ai_configuration()
+    if probe:
+        result["probe"] = probe_provider()
+    return result
 
 
 @app.get("/health/db")
