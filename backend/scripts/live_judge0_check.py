@@ -8,8 +8,15 @@ Usage (PowerShell, from the backend directory, with the API running on :8000):
 
     .\venv\Scripts\python.exe scripts\live_judge0_check.py --api http://127.0.0.1:8000
 
+Add --expect-feedback ai_generated (AI configured in the backend) or
+--expect-feedback rule_based (AI disabled) to fail the run when any submission
+used a different feedback source. With AI enabled, each of the five
+submissions makes one real, billable provider request.
+
 Steps performed:
-  1. Report judge configuration (URL host + whether a key is set; no values).
+  1. Report judge and AI configuration (URL hosts, model, whether keys are set;
+     no secret values). This reads backend/.env from this script's shell; the
+     running API may have been started with different variables.
   2. Create a throwaway learner.
   3. Submit a correct Python solution to Binary Search (external_id 704).
   4. Submit a correct Java solution.
@@ -87,12 +94,17 @@ def report_configuration():
     url = os.getenv("JUDGE0_URL", "")
     host = urlparse(url).hostname if url else None
     print(f"[1] JUDGE0_URL host: {host or '(not set)'}; API key configured: {bool(os.getenv('JUDGE0_API_KEY'))}")
-    print(f"    AI feedback configured: {bool(os.getenv('AI_API_KEY'))}")
+    ai_url = os.getenv("AI_API_URL", "").strip()
+    print(f"    AI_API_URL host: {urlparse(ai_url).hostname if ai_url else '(not set)'}; "
+          f"AI_MODEL: {os.getenv('AI_MODEL', '').strip() or '(default gpt-4o-mini)'}; "
+          f"AI key configured: {bool(os.getenv('AI_API_KEY', '').strip())}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--api", default="http://127.0.0.1:8000")
+    parser.add_argument("--expect-feedback", choices=("ai_generated", "rule_based"),
+                        help="fail if any submission's feedback came from a different source")
     args = parser.parse_args()
     api = args.api.rstrip("/")
 
@@ -138,10 +150,17 @@ def main():
         ok = body["status"] == expected
         failures += 0 if ok else 1
         details = body.get("evaluation_details") or {}
+        feedback = details.get("feedback") or {}
         print(f"{label}: got {body['status']!r} (expected {expected!r}) {'OK' if ok else 'MISMATCH'}; "
               f"failed_test={details.get('failed_test')} mastery={body['mastery']['correct_attempts']}/"
               f"{body['mastery']['total_attempts']} streak={body['mastery']['consecutive_correct']} "
-              f"mistake={'yes' if body.get('mistake') else 'no'} feedback={details.get('feedback', {}).get('provider')}")
+              f"mistake={'yes' if body.get('mistake') else 'no'} feedback={feedback.get('provider')}")
+        if feedback.get("provider") == "ai_generated":
+            print(f"    AI explanation: {feedback.get('explanation', '')[:300]}")
+        if args.expect_feedback and feedback.get("provider") != args.expect_feedback:
+            failures += 1
+            print(f"    MISMATCH: feedback source {feedback.get('provider')!r}, expected {args.expect_feedback!r}"
+                  " (the backend log names the provider failure, if any)")
 
     status, saved = call(api, "GET", f"/submissions/?user_id={user['id']}")
     status_m, mastery = call(api, "GET", f"/mastery/?user_id={user['id']}")

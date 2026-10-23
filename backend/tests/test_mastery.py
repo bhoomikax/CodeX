@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timedelta
 
 os.environ.setdefault("DATABASE_URL", "sqlite://")
+os.environ["CODEX_SKIP_DOTENV"] = "1"  # never load backend/.env (real keys, database)
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

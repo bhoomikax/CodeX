@@ -1,9 +1,12 @@
 """Submission flow, transaction safety and per-user scoping of the API routes."""
+import json
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError
 
 os.environ.setdefault("DATABASE_URL", "sqlite://")
+os.environ["CODEX_SKIP_DOTENV"] = "1"  # never load backend/.env (real keys, database)
 
 from fastapi import HTTPException
 from sqlalchemy import create_engine
@@ -18,6 +21,7 @@ from app.routes.submissions import create_submission, get_submissions
 from app.schemas.problem import ProblemResponse
 from app.schemas.submission import SubmissionCreate
 from app.services.evaluator import Evaluation, EvaluationUnavailable
+from app.services.recommendation import recommend_problem
 
 
 class RouteTestCase(unittest.TestCase):
@@ -99,18 +103,60 @@ class TransactionSafetyTests(RouteTestCase):
         self.assertIsNone(result["mistake"])
 
     @patch("app.routes.submissions.generate_feedback", return_value={
-        "provider": "ai", "explanation": "This is Accepted.", "hint": "hint", "correction": "fix",
+        "provider": "ai_generated", "explanation": "This is Accepted.", "hint": "hint", "correction": "fix",
     })
     def test_ai_claim_cannot_override_incorrect_verdict_or_learning_records(self, _feedback):
         result = self.submit(self.alice, Evaluation("Wrong Answer", False, failed_test=1))
         self.assertFalse(result["is_correct"])
         self.assertEqual(result["status"], "Wrong Answer")
-        self.assertEqual(result["evaluation_details"]["feedback"]["provider"], "ai")
+        self.assertEqual(result["evaluation_details"]["feedback"]["provider"], "ai_generated")
         self.assertEqual(result["mastery"]["correct_attempts"], 0)
         self.assertEqual(result["mastery"]["total_attempts"], 1)
         self.assertEqual(result["mistake"]["category"], "edge_case")
         self.assertEqual(result["mistake"]["explanation"], "This is Accepted.")
         self.assertEqual(self.session.query(Submission).count(), 1)
+
+    @patch.dict(os.environ, {"AI_API_KEY": "mock", "AI_API_URL": "https://ai.invalid/v1"})
+    @patch("app.services.feedback.urlopen")
+    def test_ai_feedback_label_is_returned_and_persisted(self, open_url):
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.read.return_value = json.dumps({"choices": [{"message": {"content": json.dumps(
+            {"explanation": "AI says the loop stops early.", "hint": "h", "correction": "c"})}}]}).encode()
+        open_url.return_value = response
+        result = self.submit(self.alice, Evaluation("Wrong Answer", False, failed_test=2, actual_output="1"))
+        self.assertEqual(result["status"], "Wrong Answer")
+        self.assertFalse(result["is_correct"])
+        self.assertEqual(result["evaluation_details"]["feedback"]["provider"], "ai_generated")
+        self.assertEqual(result["mistake"]["explanation"], "AI says the loop stops early.")
+        saved = get_submissions(user_id=self.alice.id, db=self.session)[0]
+        self.assertEqual(saved.evaluation_details["feedback"]["provider"], "ai_generated")
+
+    @patch.dict(os.environ, {"AI_API_KEY": "sk-route-secret", "AI_API_URL": "https://ai.invalid/v1"})
+    @patch("app.services.feedback.urlopen", side_effect=HTTPError("https://ai.invalid", 401, "denied", {}, None))
+    def test_provider_failure_still_saves_every_learning_record(self, _open_url):
+        with patch("app.routes.submissions.evaluate_submission",
+                   return_value=Evaluation("Wrong Answer", False, failed_test=1, actual_output="0")), \
+                patch("app.routes.submissions.recommend_problem", wraps=recommend_problem) as recommend, \
+                self.assertLogs("app.services.feedback", "WARNING"):
+            result = create_submission(
+                SubmissionCreate(user_id=self.alice.id, problem_id=self.problem.id, code="code", language="python"),
+                db=self.session,
+            )
+        recommend.assert_called_once()
+        self.assertEqual(result["status"], "Wrong Answer")
+        self.assertEqual(result["evaluation_details"]["feedback"]["provider"], "rule_based")
+        self.assertEqual(self.session.query(Submission).count(), 1)
+        self.assertEqual(self.session.query(Mistake).count(), 1)
+        mastery = self.session.query(PatternMastery).one()
+        self.assertEqual((mastery.total_attempts, mastery.correct_attempts), (1, 0))
+        self.assertIn("test 1", self.session.query(Mistake).one().explanation)
+        # The sanitized reason reaches the API response and the saved row.
+        reason = result["evaluation_details"]["feedback"]["fallback_reason"]
+        self.assertIn("rejected the API key (HTTP 401)", reason)
+        saved = self.session.query(Submission).one().evaluation_details["feedback"]
+        self.assertEqual(saved["fallback_reason"], reason)
+        self.assertNotIn("sk-route-secret", json.dumps(result, default=str))
 
     def test_language_is_normalised_when_saved(self):
         result = self.submit(self.alice, Evaluation("Accepted", True))
